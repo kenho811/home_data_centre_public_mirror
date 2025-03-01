@@ -278,7 +278,7 @@
           <mxGeometry x="940" y="320" width="390" height="40" as="geometry" />
         </mxCell>
         <mxCell id="MZ_uu8ip4QjvVzGDGr03-1" value="&lt;font style=&quot;font-size: 36px;&quot;&gt;&lt;b&gt;&lt;u&gt;Data Transformation&lt;/u&gt;&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
-          <mxGeometry x="50" y="13" width="370" height="60" as="geometry" />
+          <mxGeometry x="44" y="30" width="370" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
