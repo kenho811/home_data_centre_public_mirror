@@ -22,7 +22,7 @@ Architecture Overview
 ---------------------------
 
 
-.. figure:: pics/Data_Platform_Architecture-Overview_Software_Architecture.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-Overview_Software_Architecture.jpg
    :alt: Software Architecture
 
 First and foremost, the investment activities supported by the data span several days, meaning real-time data is not necessary. This justifies the use of a batch ingestion framework like Apache Airflow.
@@ -34,7 +34,7 @@ For storing metadata related to ingestion (e.g. Airflow's DAG runs and ingestion
 The data consumers include Apache Superset and a bespoke data client GUI I created with PySide. Apache Superset is a versatile business intelligence tool that allows me to visualize price movements with line charts, create data quality dashboards for freshness and row count inspections, and send reports at regular intervals to Gmail accounts. While powerful, it does not fully replace all data applications. My father has specific requirements for the format of an Excel file used in his investment activities. Therefore, I developed a PySide GUI that allows him to input parameters such as dates and stock codes, connects to Dremio, and exports the results to Excel.
 
 
-.. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.jpg
    :alt: Platform Architecture
 
 
@@ -51,7 +51,7 @@ For my Docker container registry and package artifactory, I use Gitea, which is 
 
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.jpg
    :alt: Data Ingestion
 
 
@@ -60,7 +60,7 @@ For data analytics, I ingest various data sources and store them in the data lak
 To scrape data online, I use Scrapy, a robust Python framework that offers a variety of built-in tools for web scraping, such as auto-throttling, item pipelines, and CSV exports. All these ingestion processes are managed by Apache Airflow, which serves as an advanced cron scheduler with a user-friendly interface.
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.jpg
    :alt: Data Transformation
 
 
@@ -74,14 +74,14 @@ To achieve that, I use the following tools:
 
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.jpg
 
    :alt: Data Dashboards
 
 For viewing trends and high-level summaries, Apache Superset is an indispensable business intelligence tool. Using Apache Superset, I have built several trend indicators, including the shareholding of HKEX CCASS participants for each stock, price and volume movements, data quality dashboards for data ingestion and transformation, and stock pickers with various metrics (e.g., P/E ratios, liquidity ratios, etc.).
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.jpg
 
    :alt: Emails with reports
 
@@ -89,7 +89,7 @@ For viewing trends and high-level summaries, Apache Superset is an indispensable
 Apache Superset also features a user-friendly scheduler that can send out reports at regular intervals and trigger alerts for specific events. I've configured it to send these reports via Gmail.
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.drawio.svg
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.jpg
    :alt: Bespoke data applcations
 
 
