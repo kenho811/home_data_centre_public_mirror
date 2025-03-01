@@ -1,4 +1,6 @@
-A public repository storing
+Documentation
+----------------------------------------------
 
-- Documentation on the Home Data Platform
-- 
+Architectural Diagram
+
+`Architectural Diagram <drawio/Data Platform Architecture.drawio>`_
