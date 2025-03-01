@@ -15,7 +15,7 @@ This project not only provides tangible value for my father's investment activit
 Hardware
 ---------------------------
 
-As of March 2025, my server has 128GB RAM, i5 intel Gen 13th Core, 1 x 8TB HDD + 1 x 4TB HDD, 1 x 1TB SSD + 1 x 4TB SSD.
+As of March 2025, my server has 128GB RAM, i5 intel Gen 14th Core, 1 x 8TB HDD + 1 x 4TB HDD, 1 x 1TB SSD + 1 x 4TB SSD.
 
 
 Architecture
