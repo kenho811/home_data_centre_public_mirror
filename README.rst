@@ -50,6 +50,15 @@ For Networking, I use Technitium. It has many features, but I only use it as a D
 For docker container registry/package artifactory, I use gitea. Gitea is very similar to Github. Before I found gitea, I used to use the public Dockerhub as my docker container registry. However, I want to keep the program logic private and gitea is the solution. As for a python package artifactory, it is now used to store a core python library which quite a number of other python programmes have a dependency one. The core python library contains reusable transport classes, like the connection to Dremio, connection to postgres, ingestion to Dremio etc. etc.
 
 
+
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
+   :alt: Data Ingestion
+
+For data analytics, I ingest various data sources. I store them in the data lakehouse according to the Medallion Architecture (https://www.databricks.com/glossary/medallion-architecture). It basically means that data is stored in (i) raw form, (ii) cleaned/riched form and (iii) direclty consumable form by end users.
+
+The framework I use for scraping the data online is scrapy, a battle-tested python framework with lots of built-in tools to help web-scraping, like auto-throttling, Item pipelines, csv exports. All these ingestion programmes run on Apache Airflow, which basically is a cron scheduler on stereoids (with a nice UI).
+
+
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.drawio.svg
    :alt: Data Transformation
 
@@ -63,15 +72,13 @@ To achieve that, I use the below tools.
 
 
 
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.drawio.svg
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
-   :alt: Data Ingestion
+   :alt: Data Dashboards
 
-For data analytics, I ingest various data sources. I store them in the data lakehouse according to the Medallion Architecture (https://www.databricks.com/glossary/medallion-architecture). It basically means that data is stored in (i) raw form, (ii) cleaned/riched form and (iii) direclty consumable form by end users.
+For view trends and high-level summary, Apache Superset is an indepensible business intelligence tool. Using Apache Superset, I have built some trend indicators like the shareholding of the HKEX Ccass participants of each stock, price and volume movement, data quality dashboards of data ingestion and transformation, stock pickers with different metrics (e.g. P/E ratios, liquidity ratios etc. etc.)
 
-The framework I use for scraping the data online is scrapy, a battle-tested python framework with lots of built-in tools to help web-scraping, like auto-throttling, Item pipelines, csv exports. All these ingestion programmes run on Apache Airflow, which basically is a cron scheduler on stereoids (with a nice UI).
-
-
+Apache Superset also has a nice scheduler to send out reports at regular intervals and alerts when certain events happen. I have it set up with gmail to send out the reports.
 
 
 
