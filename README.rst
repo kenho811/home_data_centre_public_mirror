@@ -1,4 +1,4 @@
-My Journey of building a home data centre
+My Journey of building a Home Data Centre
 =================================================
 
 This project originated from my passion for automating the manual processes my father performs for his investment activities. He used to gather data from various online sources and paste it into an Excel file for analysis. I found this method tedious and error-prone, so I sought ways to automate it by teaching myself Python.
