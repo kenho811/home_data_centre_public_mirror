@@ -29,8 +29,20 @@ For storing metadata of the ingestion (e.g. Airflow's DAGs, ingestion logs of a 
 
 The data consumers are Apache Superset and a bespoke data client GUI I made with PySide. Apache Superset is a general purpose Business Intelligence tool. With that, I can visualise price movements with line chart, create data quality dashboards on data freshness and row counts inspection, send out reports at regular intervals to gmail accounts and so on. While powerful, it is not a complete replacement for all data applications. For instance, my father has a specific requirement on the format of an Excel file which he uses for his investment activities. Therefore, I created a GUI with PySide which exposes parameters like dates and stock code for my father to key in, connects to and extracts data from Dremio and dumps the result in Excel. 
 
+.. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.drawio.svg
+   :alt: Platform Architecture
 
+To support all the applications above, an easily maintainable platform is required. For that, I use proxmox, a hypervisor which can run Virtual Machines and LXD containers (this of them as light weight VMs). It is built on the Linux Debian distro and comes with a GUI accessible remotely. One can easily create Virtual Machines, assign CPU and RAM to it and install any operation system which come in an .iso file downloaded online.
 
+When deciding how to group the applications when deploying them on the proxmox Virtual Machines, I opt for separating stateful and stateless applications.
+
+- Stateful applications like Postgres and Minio should all run in its own virtual machines. It allows easy rollback and data backup.
+- Stateless applications all run on kubernetes, which in turn run in one virtual machine. This allows easy deployment via helm chart, which abounds online.
+- Infrastructure-critical applications (e.g. DNS and DHCP server, docker container registry/package artifactory) should also run in separate LXD containers. This ensures that basic functionalities are guaranteed even when kubernetes fails (e.g. resource contention of applications in kubernetes)
+
+For Networking, I use Technitium. It has many features, but I only use it as a DHCP server (which assigns IP addresses to the Virtual Machines and LXD containers) and DNS server (which resolves human readable URLs to IP addresses). With that, for instance, I can easily access my Minio buckets via a URL like `http://minio-prod` instead of `http://192.168.1.10`.
+
+For docker container registry/package artifactory, I use gitea. Gitea is very similar to Github. Before I found gitea, I used to use the public Dockerhub as my docker container registry. However, I want to keep the program logic private and gitea is the solution. As for a python package artifactory, it is now used to store a core python library which quite a number of other python programmes have a dependency one. The core python library contains reusable transport classes, like the connection to Dremio, connection to postgres, ingestion to Dremio etc. etc.
 
 
 
