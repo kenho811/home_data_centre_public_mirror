@@ -78,14 +78,16 @@ To achieve that, I use the below tools.
 
 For view trends and high-level summary, Apache Superset is an indepensible business intelligence tool. Using Apache Superset, I have built some trend indicators like the shareholding of the HKEX Ccass participants of each stock, price and volume movement, data quality dashboards of data ingestion and transformation, stock pickers with different metrics (e.g. P/E ratios, liquidity ratios etc. etc.)
 
+
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.drawio.svg
+
+   :alt: Emails with reports
+
+
 Apache Superset also has a nice scheduler to send out reports at regular intervals and alerts when certain events happen. I have it set up with gmail to send out the reports.
 
 
-
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.drawio.svg
-   :alt: Minio Main Page
+   :alt: Bespoke data applcations
 
-   Minio
-
-Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
-
+My father has some very specific requirements on the format of data he needs. For these requirements, I created a GUI using the PySide framework, which extracts data from the data lakehouse and dumps data as excel.
