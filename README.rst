@@ -27,7 +27,7 @@ I also expect data volume to increase over time, so I opted for Minio, the S3-co
 
 For storing metadata of the ingestion (e.g. Airflow's DAGs, ingestion logs of a custom ingestion framework I wrote etc. etc.), I use postgres. Row-by-row insertion is best with RDBMS like postgres, while bulk insertion is best with big data file format, like Apache Iceberg. I discovered this after experiencing the pain of ever-increasing file size of iceberg with row-by-row insertion.
 
-
+The data consumers are Apache Superset and a bespoke data client GUI I made with PySide. Apache Superset is a general purpose Business Intelligence tool. With that, I can visualise price movements with line chart, create data quality dashboards on data freshness and row counts inspection, send out reports at regular intervals to gmail accounts and so on. While powerful, it is not a complete replacement for all data applications. For instance, my father has a specific requirement on the format of an Excel file which he uses for his investment activities. Therefore, I created a GUI with PySide which exposes parameters like dates and stock code for my father to key in, connects to and extracts data from Dremio and dumps the result in Excel. 
 
 
 
