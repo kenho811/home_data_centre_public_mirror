@@ -1,6 +1,8 @@
 My Journey of building a Home Data Centre
 =================================================
 
+(As of 1st March 2025)
+
 This project originated from my passion for automating the manual processes my father performs for his investment activities. He used to gather data from various online sources and paste it into an Excel file for analysis. I found this method tedious and error-prone, so I sought ways to automate it by teaching myself Python.
 
 It began as a simple project where I scraped one online data source and directly imported it into Excel for my father's use. However, the scope expanded, requiring more data sources. Additionally, raw data became insufficient for deriving insights, necessitating data transformation. Performing all these ETL steps in a single Python program became increasingly unmanageable.
