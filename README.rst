@@ -1,6 +1,6 @@
 Documentation
 ----------------------------------------------
 
-Architectural Diagram
+`Architectural Diagram <drawio/Data_Platform_Architecture.drawio>`_
 
-`Architectural Diagram <drawio/Data Platform Architecture.drawio>`_
+
