@@ -42,9 +42,9 @@ To support all the applications mentioned, an easily maintainable platform is es
 
 When deploying applications on Proxmox Virtual Machines, I separate stateful and stateless applications:
 
-- *Stateful applications* like Postgres and Minio each run in their own Virtual Machines, facilitating easy rollback and data backup.
-- *Stateless applications* run on Kubernetes, which is hosted on a single Virtual Machine. This setup allows for straightforward deployment via Helm charts, which are widely available online.
-- *Infrastructure-critical applications* (e.g., DNS and DHCP servers, Docker container registry/package artifactory) operate in separate LXD containers. This configuration ensures basic functionalities remain intact even if Kubernetes experiences failures, such as resource contention.
+- **Stateful applications** like Postgres and Minio each run in their own Virtual Machines, facilitating easy rollback and data backup.
+- **Stateless applications** run on Kubernetes, which is hosted on a single Virtual Machine. This setup allows for straightforward deployment via Helm charts, which are widely available online.
+- **Infrastructure-critical applications** (e.g., DNS and DHCP servers, Docker container registry/package artifactory) operate in separate LXD containers. This configuration ensures basic functionalities remain intact even if Kubernetes experiences failures, such as resource contention.
 For networking, I use Technitium. While it offers many features, I primarily utilize it as a DHCP server (assigning IP addresses to Virtual Machines and LXD containers) and a DNS server (resolving human-readable URLs to IP addresses). This setup allows me to access my Minio buckets via a URL like http://minio-prod instead of a numeric IP address.
 
 For my Docker container registry and package artifactory, I use Gitea, which is similar to GitHub. Previously, I relied on the public Docker Hub for my container registry, but I wanted to maintain privacy for my program logic, and Gitea provides that solution. Additionally, Gitea serves as a Python package artifactory, storing a core Python library that several other Python programs depend on. This core library contains reusable transport classes, such as connections to Dremio and Postgres, and data ingestion routines.
@@ -54,21 +54,23 @@ For my Docker container registry and package artifactory, I use Gitea, which is 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
    :alt: Data Ingestion
 
-For data analytics, I ingest various data sources. I store them in the data lakehouse according to the Medallion Architecture (https://www.databricks.com/glossary/medallion-architecture). It basically means that data is stored in (i) raw form, (ii) cleaned/riched form and (iii) direclty consumable form by end users.
 
-The framework I use for scraping the data online is scrapy, a battle-tested python framework with lots of built-in tools to help web-scraping, like auto-throttling, Item pipelines, csv exports. All these ingestion programmes run on Apache Airflow, which basically is a cron scheduler on stereoids (with a nice UI).
+For data analytics, I ingest various data sources and store them in the data lakehouse according to the Medallion Architecture. This architecture organizes data into three layers: (i) raw form, (ii) cleaned and enriched form, and (iii) directly consumable form for end users.
+
+To scrape data online, I use Scrapy, a robust Python framework that offers a variety of built-in tools for web scraping, such as auto-throttling, item pipelines, and CSV exports. All these ingestion processes are managed by Apache Airflow, which serves as an advanced cron scheduler with a user-friendly interface.
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.drawio.svg
    :alt: Data Transformation
 
-Ingestion raw data is usually just the first step. My father needs summary data like the highest and lower price of the month, or rolling directed volume of a stock over the past 30 days and so on.
 
-To achieve that, I use the below tools.
+Ingesting raw data is usually just the first step. My father needs summary data, such as the highest and lowest prices of the month or the rolling directed volume of a stock over the past 30 days.
 
-- Dbt (Data build tool). Dbt is a python framework leveraging on Jinja templating to assist data transformation in a database. Via SQL, one creates the logic of transformation in the declarative language and also runs it in situ. The benefit is manyfold. Not only is the logic easily understandable in SQL (compared to lots of IF-ELSE statements in a procedural language), the data also never leaves the database during transformation. With dbt, tt is only doing a `CREATE TABLE as (SELECT <transformation_logic>)` in the database.
+To achieve that, I use the following tools:
 
-- Pure Python. While powerful, SQL is not good for row-by-row transformation. Also, SQL is an abstraction which does not allow granular control of execution behaviour. With python, I can calculate rolling volume in a more memory efficient manner and in small batches. In SQL, while possible with window function, it is hard to control the amount of memory required.
+- **dbt (Data Build Tool)**: dbt is a Python framework that leverages Jinja templating to assist with data transformation in a database. Users can create transformation logic using SQL, which is both easy to understand and executes directly within the database. The benefit is manifold: the data never leaves the database during transformation, and dbt performs operations like `CREATE TABLE AS (SELECT <transformation_logic>)` efficiently.
+
+- **Pure Python**: While SQL is powerful, it is not ideal for row-by-row transformations. Additionally, SQL abstracts execution behavior, limiting granular control. With Python, I can calculate rolling volume in a more memory-efficient manner and in smaller batches. Although SQL can achieve this using window functions, managing memory usage is more challenging.
 
 
 
@@ -76,7 +78,7 @@ To achieve that, I use the below tools.
 
    :alt: Data Dashboards
 
-For view trends and high-level summary, Apache Superset is an indepensible business intelligence tool. Using Apache Superset, I have built some trend indicators like the shareholding of the HKEX Ccass participants of each stock, price and volume movement, data quality dashboards of data ingestion and transformation, stock pickers with different metrics (e.g. P/E ratios, liquidity ratios etc. etc.)
+For viewing trends and high-level summaries, Apache Superset is an indispensable business intelligence tool. Using Apache Superset, I have built several trend indicators, including the shareholding of HKEX CCASS participants for each stock, price and volume movements, data quality dashboards for data ingestion and transformation, and stock pickers with various metrics (e.g., P/E ratios, liquidity ratios, etc.).
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.drawio.svg
@@ -84,17 +86,17 @@ For view trends and high-level summary, Apache Superset is an indepensible busin
    :alt: Emails with reports
 
 
-Apache Superset also has a nice scheduler to send out reports at regular intervals and alerts when certain events happen. I have it set up with gmail to send out the reports.
+Apache Superset also features a user-friendly scheduler that can send out reports at regular intervals and trigger alerts for specific events. I've configured it to send these reports via Gmail.
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.drawio.svg
    :alt: Bespoke data applcations
 
-My father has some very specific requirements on the format of data he needs. For these requirements, I created a GUI using the PySide framework, which extracts data from the data lakehouse and dumps data as excel.
+
+My father has specific requirements for the data format he needs. To meet these requirements, I created a GUI using the PySide framework. This application extracts data from the data lakehouse and exports it as an Excel file.
 
 
+Next Steps
+------------
 
-Next Step
----------------------------
-
-With the large amount of data collected, I want to explore machine learning and artificial intelligence to aid in making investment decisions.
+With the large amount of data collected, I aim to explore machine learning and artificial intelligence to assist in making investment decisions.
