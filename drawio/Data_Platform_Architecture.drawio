@@ -333,7 +333,7 @@
           <mxGeometry x="935" y="40" width="460" height="60" as="geometry" />
         </mxCell>
         <mxCell id="4S9zr_Yi0ZBtMWTIO-xl-1" value="&lt;span style=&quot;font-size: 24px;&quot;&gt;&lt;b&gt;Email with Sreenshot Report&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="2220" y="1020" width="350" height="40" as="geometry" />
+          <mxGeometry x="2150" y="720" width="350" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
