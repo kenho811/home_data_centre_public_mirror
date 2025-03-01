@@ -7,11 +7,15 @@ It started out as a simple project where I scraped *ONE* data source online and 
 
 Since my first job as a python/data engineer in 2021, I learned the fundamentals of data engineering. I applied the knowledge acquired at work to my home setup and came up with the below architecture currently used at home. It has already gone through several cycles of revisions.
 
-Initially, in 2021, I used several old lenovo laptops (2 with 4 GB RAM and 500GB HDD and 1 with 8GB ram with 1TB HDD) and create a cluster of computers connected via the home router. However, as data volume grows, I bought a Desktop with 64 GB RAM and placed it in the living room in March 2024. On the new desktop, I installed proxmox, a hypervisor capable of running Virtual Machines. As of March 2025, I am running several VMs on proxmox, each running a service accessible from a URL only resolvable using a DNS server with custom AAAA records in the home network.
+Initially, in 2021, I used several old lenovo laptops (2 with 4 GB RAM and 500GB HDD and 1 with 8GB ram with 1TB HDD) and create a cluster of computers connected via the home router. However, as data volume grows, I bought a Desktop with 64 GB RAM initially and placed it in the living room in March 2024. On the new desktop, I installed proxmox, a hypervisor capable of running Virtual Machines. As of March 2025, I am running several VMs on proxmox, each running a service accessible from a URL only resolvable using a DNS server with custom AAAA records in the home network.
 
 This project not only provides tangible value for my father's investment activities, it also deepens my understanding of data engineering. I am planning to use the data to further explore the field of data science, machine learning and artificial intelligence.
 
-Below is an overview of the architecture.
+
+Hardware
+---------------------------
+
+As of March 2025, my server has 128GB RAM, i5 intel Gen 13th Core, 1 x 8TB HDD + 1 x 4TB HDD, 1 x 1TB SSD + 1 x 4TB SSD.
 
 
 Architecture Overview
@@ -32,6 +36,7 @@ The data consumers are Apache Superset and a bespoke data client GUI I made with
 .. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.drawio.svg
    :alt: Platform Architecture
 
+
 To support all the applications above, an easily maintainable platform is required. For that, I use proxmox, a hypervisor which can run Virtual Machines and LXD containers (this of them as light weight VMs). It is built on the Linux Debian distro and comes with a GUI accessible remotely. One can easily create Virtual Machines, assign CPU and RAM to it and install any operation system which come in an .iso file downloaded online.
 
 When deciding how to group the applications when deploying them on the proxmox Virtual Machines, I opt for separating stateful and stateless applications.
@@ -43,6 +48,19 @@ When deciding how to group the applications when deploying them on the proxmox V
 For Networking, I use Technitium. It has many features, but I only use it as a DHCP server (which assigns IP addresses to the Virtual Machines and LXD containers) and DNS server (which resolves human readable URLs to IP addresses). With that, for instance, I can easily access my Minio buckets via a URL like `http://minio-prod` instead of `http://192.168.1.10`.
 
 For docker container registry/package artifactory, I use gitea. Gitea is very similar to Github. Before I found gitea, I used to use the public Dockerhub as my docker container registry. However, I want to keep the program logic private and gitea is the solution. As for a python package artifactory, it is now used to store a core python library which quite a number of other python programmes have a dependency one. The core python library contains reusable transport classes, like the connection to Dremio, connection to postgres, ingestion to Dremio etc. etc.
+
+
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.drawio.svg
+   :alt: Data Transformation
+
+Ingestion raw data is usually just the first step. My father needs summary data like the highest and lower price of the month, or rolling directed volume of a stock over the past 30 days and so on.
+
+To achieve that, I use the below tools.
+
+- Dbt (Data build tool). Dbt is a python framework leveraging on Jinja templating to assist data transformation in a database. Via SQL, one creates the logic of transformation in the declarative language and also runs it in situ. The benefit is manyfold. Not only is the logic easily understandable in SQL (compared to lots of IF-ELSE statements in a procedural language), the data also never leaves the database during transformation. With dbt, tt is only doing a `CREATE TABLE as (SELECT <transformation_logic>)` in the database.
+
+- Pure Python. While powerful, SQL is not good for row-by-row transformation. Also, SQL is an abstraction which does not allow granular control of execution behaviour. With python, I can calculate rolling volume in a more memory efficient manner and in small batches. In SQL, while possible with window function, it is hard to control the amount of memory required.
+
 
 
 
