@@ -18,12 +18,16 @@ Hardware
 As of March 2025, my server has 128GB RAM, i5 intel Gen 13th Core, 1 x 8TB HDD + 1 x 4TB HDD, 1 x 1TB SSD + 1 x 4TB SSD.
 
 
-Architecture Overview
+Architecture
 ---------------------------
 
+Software Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. figure:: pics/Data_Platform_Architecture-Overview_Software_Architecture.jpg
    :alt: Software Architecture
+
+
 
 First and foremost, the investment activities supported by the data span several days, meaning real-time data is not necessary. This justifies the use of a batch ingestion framework like Apache Airflow.
 
@@ -33,6 +37,9 @@ For storing metadata related to ingestion (e.g. Airflow's DAG runs and ingestion
 
 The data consumers include Apache Superset and a bespoke data client GUI I created with PySide. Apache Superset is a versatile business intelligence tool that allows me to visualize price movements with line charts, create data quality dashboards for freshness and row count inspections, and send reports at regular intervals to Gmail accounts. While powerful, it does not fully replace all data applications. My father has specific requirements for the format of an Excel file used in his investment activities. Therefore, I developed a PySide GUI that allows him to input parameters such as dates and stock codes, connects to Dremio, and exports the results to Excel.
 
+
+Platform Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.jpg
    :alt: Platform Architecture
@@ -50,6 +57,11 @@ For networking, I use Technitium. While it offers many features, I primarily uti
 For my Docker container registry and package artifactory, I use Gitea, which is similar to GitHub. Previously, I relied on the public Docker Hub for my container registry, but I wanted to maintain privacy for my program logic, and Gitea provides that solution. Additionally, Gitea serves as a Python package artifactory, storing a core Python library that several other Python programs depend on. This core library contains reusable transport classes, such as connections to Dremio and Postgres, and data ingestion routines.
 
 
+ETL
+--------------
+
+Data Ingestion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.jpg
    :alt: Data Ingestion
@@ -58,6 +70,9 @@ For my Docker container registry and package artifactory, I use Gitea, which is 
 For data analytics, I ingest various data sources and store them in the data lakehouse according to the Medallion Architecture. This architecture organizes data into three layers: (i) raw form, (ii) cleaned and enriched form, and (iii) directly consumable form for end users.
 
 To scrape data online, I use Scrapy, a robust Python framework that offers a variety of built-in tools for web scraping, such as auto-throttling, item pipelines, and CSV exports. All these ingestion processes are managed by Apache Airflow, which serves as an advanced cron scheduler with a user-friendly interface.
+
+Data Transformation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.jpg
@@ -73,12 +88,19 @@ To achieve that, I use the following tools:
 - **Pure Python**: While SQL is powerful, it is not ideal for row-by-row transformations. Additionally, SQL abstracts execution behavior, limiting granular control. With Python, I can calculate rolling volume in a more memory-efficient manner and in smaller batches. Although SQL can achieve this using window functions, managing memory usage is more challenging.
 
 
+Data Distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.jpg
 
    :alt: Data Dashboards
 
 For viewing trends and high-level summaries, Apache Superset is an indispensable business intelligence tool. Using Apache Superset, I have built several trend indicators, including the shareholding of HKEX CCASS participants for each stock, price and volume movements, data quality dashboards for data ingestion and transformation, and stock pickers with various metrics (e.g., P/E ratios, liquidity ratios, etc.).
+
+
+
+
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.jpg
@@ -89,8 +111,9 @@ For viewing trends and high-level summaries, Apache Superset is an indispensable
 Apache Superset also features a user-friendly scheduler that can send out reports at regular intervals and trigger alerts for specific events. I've configured it to send these reports via Gmail.
 
 
+
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.jpg
-   :alt: Bespoke data applcations
+   :alt: Bespoke data applications
 
 
 My father has specific requirements for the data format he needs. To meet these requirements, I created a GUI using the PySide framework. This application extracts data from the data lakehouse and exports it as an Excel file.
