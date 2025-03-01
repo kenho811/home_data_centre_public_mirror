@@ -1,0 +1,38 @@
+# Sync to remote repositories for backup purposes
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v3
+
+      - name: Push to destination repository
+        run: |
+          git config --global user.email "someuser@gmail.com"
+          git config --global user.name "someuser"
+          
+          # copy private key for backup repo. Using SSH to access repo
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BACKUP_REPO_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 400 ~/.ssh/id_ed25519
+          
+          git remote add backup git@github.com:kenho811/home_data_centre_public_mirror.git
+          # force-push everything. 
+          
+          ls
+          pwd
+          
+          git fetch --unshallow 
+          git push -u backup -f
+          
+          # sleep for a while first so that all tags are ready
+          sleep 4
+          
+          git push -u backup -f --tags
