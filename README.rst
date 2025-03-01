@@ -17,6 +17,25 @@ Below is an overview of the architecture.
 Architecture Overview
 ---------------------------
 
+
+.. figure:: pics/Data_Platform_Architecture-Overview_Software_Architecture.drawio.svg
+   :alt: Software Architecture
+
+First and foremost, the investment activities the data is designed to support span across at least several days. In other words, real-timeness of the data is not necessary. This justifies the use of batch ingestion framework, like Apache Airflow.
+
+I also expect data volume to increase over time, so I opted for Minio, the S3-compatible Object storage to store my data. Currently, I use Apache Iceberg as the file format to store the data. It is best supporte by Dremio, an open source Data Lakehouse whose value proposition is that it is only a compute engine and does not store data. In practice, Dremio connects to the data source directly (e.g. Minio) and fetches the data and return to the client, without storing a copy of the data.
+
+For storing metadata of the ingestion (e.g. Airflow's DAGs, ingestion logs of a custom ingestion framework I wrote etc. etc.), I use postgres. Row-by-row insertion is best with RDBMS like postgres, while bulk insertion is best with big data file format, like Apache Iceberg. I discovered this after experiencing the pain of ever-increasing file size of iceberg with row-by-row insertion.
+
+
+
+
+
+
+
+
+
+
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.drawio.svg
    :alt: Minio Main Page
 
