@@ -46,6 +46,15 @@ For docker container registry/package artifactory, I use gitea. Gitea is very si
 
 
 
+.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
+   :alt: Data Ingestion
+
+For data analytics, I ingest various data sources. I store them in the data lakehouse according to the Medallion Architecture (https://www.databricks.com/glossary/medallion-architecture). It basically means that data is stored in (i) raw form, (ii) cleaned/riched form and (iii) direclty consumable form by end users.
+
+The framework I use for scraping the data online is scrapy, a battle-tested python framework with lots of built-in tools to help web-scraping, like auto-throttling, Item pipelines, csv exports. All these ingestion programmes run on Apache Airflow, which basically is a cron scheduler on stereoids (with a nice UI).
+
+
+
 
 
 .. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.drawio.svg
@@ -53,5 +62,5 @@ For docker container registry/package artifactory, I use gitea. Gitea is very si
 
    Minio
 
-
+Data_Platform_Architecture-ETL_Data_Ingestion.drawio.svg
 
