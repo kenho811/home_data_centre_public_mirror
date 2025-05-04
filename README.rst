@@ -1,8 +1,13 @@
-.. note::
+.. sidebar:: 📊 Analytics Portfolio
+   :class: framed-sidebar
 
-   View my analytics work here!
+   **View my analytics work here!**
 
-   https://kenho811.github.io/home_data_centre_public_mirror/
+   |link|_
+
+   .. |link| replace:: **Visit my GitHub Pages site**
+   .. _link: https://kenho811.github.io/home_data_centre_public_mirror/
+
 
 
 My Journey of building a Home Data Centre
