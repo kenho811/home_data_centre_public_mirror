@@ -176,7 +176,7 @@ def _(
     mo.vstack(
         [
         
-            mo.uit.table(hk_indices_df),
+            mo.ui.table(hk_indices_df),
         
             mo.hstack(
                 [
