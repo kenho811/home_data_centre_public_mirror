@@ -83,10 +83,13 @@ def _():
 def _(pd):
     base_url = "https://raw.githubusercontent.com/kenho811/home_data_centre_public_mirror/refs/heads/main/marimo/stock_trend"
 
-    hk_indices_df: pd.DataFrame = pd.read_csv(
+    hk_indices_stocks_df: pd.DataFrame = pd.read_csv(
         base_url + "/public/hk_index_constituent_stock.csv"
     )
 
+    hk_indices_df: pd.DataFrame = pd.read_csv(
+        base_url + "/public/hk_index_name.csv"
+    )
 
     symbols_df: pd.DataFrame = pd.read_csv(base_url + "/public/stock_display_name.csv")
 
@@ -103,13 +106,19 @@ def _(pd):
     all_stock_trend["to_utc_datetime"] = pd.to_datetime(
         all_stock_trend["to_utc_datetime"]
     )
-    return all_stock_trend, hk_indices_df, symbols_df, trend_config_df
+    return (
+        all_stock_trend,
+        hk_indices_df,
+        hk_indices_stocks_df,
+        symbols_df,
+        trend_config_df,
+    )
 
 
 @app.cell
-def _(List, hk_indices_df, mo):
+def _(List, hk_indices_stocks_df, mo):
     unique_indices: List[str] = sorted(
-        hk_indices_df["standard_index_symbol"].unique()
+        hk_indices_stocks_df["standard_index_symbol"].unique()
     )
 
     index_picker = mo.ui.dropdown(
@@ -121,13 +130,20 @@ def _(List, hk_indices_df, mo):
 
 
 @app.cell
-def _(hk_indices_df, index_picker, mo, symbols_df, trend_config_df):
+def _(
+    hk_indices_df,
+    hk_indices_stocks_df,
+    index_picker,
+    mo,
+    symbols_df,
+    trend_config_df,
+):
     stock_name_to_val_mapping = {
         d.get("display_name"): d.get("standard_symbol")
         for d in symbols_df.to_dict(orient="records")
         if d.get("standard_symbol")
-        in hk_indices_df[
-            hk_indices_df["standard_index_symbol"] == index_picker.value
+        in hk_indices_stocks_df[
+            hk_indices_stocks_df["standard_index_symbol"] == index_picker.value
         ]["standard_stock_symbol"].values
     }
 
@@ -166,6 +182,9 @@ def _(hk_indices_df, index_picker, mo, symbols_df, trend_config_df):
                 ],
                 justify="center",
             ),
+        
+            mo.uit.table(hk_indices_df),
+        
             mo.hstack(
                 [trend_config_left_picker, trend_config_right_picker],
                 justify="center",
