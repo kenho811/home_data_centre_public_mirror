@@ -80,13 +80,29 @@ def _():
 
 
 @app.cell
-def _(mo, pd):
-    hk_indices_df: pd.DataFrame = pd.read_csv(mo.notebook_location() /"public"/ "hk_index_constituent_stock.csv")
-    symbols_df: pd.DataFrame = pd.read_csv(mo.notebook_location() /"public"/"stock_display_name.csv")
-    trend_config_df: pd.DataFrame = pd.read_csv(mo.notebook_location()/ "public"/"stock_trend_config.csv")
-    all_stock_trend = pd.read_csv(mo.notebook_location()/ "public"/ "stock_trend_from_2018Jan01_to_2025May02.csv")
-    all_stock_trend["from_utc_datetime"] = pd.to_datetime( all_stock_trend["from_utc_datetime"] )
-    all_stock_trend["to_utc_datetime"] = pd.to_datetime( all_stock_trend["to_utc_datetime"] )
+def _(pd):
+    base_url = "https://raw.githubusercontent.com/kenho811/home_data_centre_public_mirror/refs/heads/main/marimo/stock_trend"
+
+    hk_indices_df: pd.DataFrame = pd.read_csv(
+        base_url + "/public/hk_index_constituent_stock.csv"
+    )
+
+
+    symbols_df: pd.DataFrame = pd.read_csv(base_url + "/public/stock_display_name.csv")
+
+    trend_config_df: pd.DataFrame = pd.read_csv(
+        base_url + "/public/stock_trend_config.csv"
+    )
+    all_stock_trend = pd.read_csv(
+        base_url + "/public/stock_trend_from_2018Jan01_to_2025May02.csv"
+    )
+
+    all_stock_trend["from_utc_datetime"] = pd.to_datetime(
+        all_stock_trend["from_utc_datetime"]
+    )
+    all_stock_trend["to_utc_datetime"] = pd.to_datetime(
+        all_stock_trend["to_utc_datetime"]
+    )
     return all_stock_trend, hk_indices_df, symbols_df, trend_config_df
 
 
@@ -180,7 +196,7 @@ def _(
         and  config_id = '{trend_config_id}'
         order by standard_symbol, from_utc_datetime
         """,
-         output=False
+            output=False,
         )
 
 
