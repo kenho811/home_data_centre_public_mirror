@@ -175,6 +175,9 @@ def _(
 
     mo.vstack(
         [
+        
+            mo.uit.table(hk_indices_df),
+        
             mo.hstack(
                 [
                     index_picker,
@@ -182,8 +185,6 @@ def _(
                 ],
                 justify="center",
             ),
-        
-            mo.uit.table(hk_indices_df),
         
             mo.hstack(
                 [trend_config_left_picker, trend_config_right_picker],
