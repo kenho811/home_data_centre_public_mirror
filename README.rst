@@ -1,3 +1,10 @@
+.. note::
+
+   View my analytics work here!
+
+   https://kenho811.github.io/home_data_centre_public_mirror/
+
+
 My Journey of building a Home Data Centre
 =================================================
 
