@@ -49,7 +49,7 @@ def _(mo):
 
     We need an objective measurement on what constitutes an UP and DOWN. I opted for the below definition.
 
-    ***If the stock price increases by 50% of the difference between its historical maximum and minimum price, then we consider it a breakout.***
+    ***If the stock price increases by 30%/50%/70% of the difference between its historical maximum and minimum price, then we consider it a breakout.***
 
     For the historical period, I picked `2018-01-01` until `2025-05-02`
 
