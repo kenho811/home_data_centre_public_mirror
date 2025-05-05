@@ -310,7 +310,8 @@ def _(
                 title={
                     "text": ["Stock Trend Over Time"],
                     "subtitle": [config_display_name],
-                }
+                },
+                width=400,
             )
             .interactive()
         )
