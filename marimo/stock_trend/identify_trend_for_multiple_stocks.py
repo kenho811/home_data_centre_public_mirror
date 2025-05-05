@@ -308,7 +308,6 @@ def _(
             .configure_axis(labelLimit=100)
             .properties(
                 title=f"Stock Trend Over Time - {config_display_name} ",
-                width=800,
             )
             .interactive()
         )
