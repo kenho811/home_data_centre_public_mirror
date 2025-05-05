@@ -162,13 +162,13 @@ def _(
     # select 2 configs with largest contrast
 
     trend_config_left_picker = mo.ui.dropdown(
-        label="Right Trend Config",
+        label="Left Trend Config",
         value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.7",
         options=trend_config_name_to_val_mapping,
     )
 
     trend_config_right_picker = mo.ui.dropdown(
-        label="Left Trend Config",
+        label="Right Trend Config",
         value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3",
         options=trend_config_name_to_val_mapping,
     )
