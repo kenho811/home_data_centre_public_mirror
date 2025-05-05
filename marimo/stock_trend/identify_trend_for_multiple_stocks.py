@@ -307,7 +307,10 @@ def _(
             .configure_view(stroke="transparent")
             .configure_axis(labelLimit=100)
             .properties(
-                title=f"Stock Trend Over Time - {config_display_name} ",
+                title={
+                    "text": ["Stock Trend Over Time"],
+                    "subtitle": [config_display_name],
+                }
             )
             .interactive()
         )
