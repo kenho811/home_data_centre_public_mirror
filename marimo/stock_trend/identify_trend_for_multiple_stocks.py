@@ -91,7 +91,9 @@ def _(pd):
         base_url + "/public/hk_index_name.csv"
     )
 
-    symbols_df: pd.DataFrame = pd.read_csv(base_url + "/public/stock_display_name.csv")
+    symbols_df: pd.DataFrame = pd.read_csv(
+        base_url + "/public/stock_display_name.csv"
+    )
 
     trend_config_df: pd.DataFrame = pd.read_csv(
         base_url + "/public/stock_trend_config.csv"
@@ -175,6 +177,11 @@ def _(
 
     mo.vstack(
         [
+            mo.md(
+                """
+                    ## Playground
+                    """
+            ),
             mo.hstack(
                 [
                     index_picker,
@@ -182,10 +189,7 @@ def _(
                 ],
                 justify="center",
             ),
-
             mo.ui.table(hk_indices_df),
-
-
             mo.hstack(
                 [trend_config_left_picker, trend_config_right_picker],
                 justify="center",
