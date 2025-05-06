@@ -315,7 +315,7 @@ def _(
                     "text": ["Stock Trend Over Time"],
                     "subtitle": [config_display_name],
                 },
-                width=400,
+                width=500,
             )
             .interactive()
         )
