@@ -28,7 +28,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          uv pip install marimo starlette
+          uv pip install marimo==0.13.4
 
       - name: 🛠️ Export notebooks
         run: |
