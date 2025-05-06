@@ -7,6 +7,7 @@
 #     "numpy==2.2.5",
 #     "pandas==2.2.3",
 #     "sqlglot==26.16.4",
+#     "starlette"
 # ]
 # ///
 
