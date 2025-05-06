@@ -3,7 +3,7 @@
 # dependencies = [
 #     "altair==5.5.0",
 #     "duckdb==1.2.2",
-#     "marimo==0.13.4",
+#     "marimo==0.13.6",
 #     "numpy==2.2.5",
 #     "pandas==2.2.3",
 #     "sqlglot==26.16.4",
