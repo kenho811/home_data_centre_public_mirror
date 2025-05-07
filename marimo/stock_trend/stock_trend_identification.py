@@ -87,8 +87,8 @@ def load_all_data(pd):
         base_url + "/public/hk_index_constituent_stock.csv"
     )
 
-    example_9992_stock_price: pd.DataFrame = pd.read_csv(
-        base_url + "/public/9992_average_price_from_2018Jan01_to_2025May02.csv"
+    sample_stock_prices: pd.DataFrame = pd.read_csv(
+        base_url + "/public/0001_2216_9992_average_price_from_2018Jan01_to_2025May02.csv"
     )
 
     hk_indices_df: pd.DataFrame = pd.read_csv(
@@ -125,10 +125,10 @@ def load_all_data(pd):
 
     return (
         all_stock_trend,
-        example_9992_stock_price,
         hk_indices_df,
         hk_indices_stocks_df,
         reversed_trend_config_name_to_val_mapping,
+        sample_stock_prices,
         symbols_df,
         trend_config_name_to_val_mapping,
     )
@@ -136,30 +136,36 @@ def load_all_data(pd):
 
 @app.cell
 def demo_one_stock_1(mo, trend_config_name_to_val_mapping):
-    methodlogy_trend_config_radio = mo.ui.radio(label="Trend Config",
+    one_stock_trend_config_radio = mo.ui.radio(label="Trend Config",
         value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3",
         options=trend_config_name_to_val_mapping,
     )
-    return (methodlogy_trend_config_radio,)
+
+    one_stock_symbol_ratio = mo.ui.radio(label="Stock Config",
+        value='SEHK:00001',
+        options=['SEHK:00001','SEHK:02216', 'SEHK:09992']
+    )
+    return one_stock_symbol_ratio, one_stock_trend_config_radio
 
 
 @app.cell
 def demo_one_stock_2(
     all_stock_trend,
     alt,
-    example_9992_stock_price: "pd.DataFrame",
-    methodlogy_trend_config_radio,
     mo,
+    one_stock_symbol_ratio,
+    one_stock_trend_config_radio,
     pd,
+    sample_stock_prices: "pd.DataFrame",
 ):
     ## DEMO Methodology
     # OHLC Chart
 
-    segmented_df = all_stock_trend[(all_stock_trend['standard_symbol'] == 'SEHK:09992') & (all_stock_trend['config_id'] ==  methodlogy_trend_config_radio.value)]
-
+    segmented_df = all_stock_trend[(all_stock_trend['standard_symbol'] == one_stock_symbol_ratio.value) & (all_stock_trend['config_id'] ==  one_stock_trend_config_radio.value)]
+    filterd_sample_stock_prices = sample_stock_prices[sample_stock_prices['standard_symbol'] == one_stock_symbol_ratio.value]
 
     average_price = (
-        alt.Chart(example_9992_stock_price)
+        alt.Chart(filterd_sample_stock_prices)
         .mark_line()
         .encode(
             x="utc_datetime:T",
@@ -258,7 +264,8 @@ def demo_one_stock_2(
     mo.hstack(
     
         [
-        methodlogy_trend_config_radio,
+        one_stock_trend_config_radio,
+        one_stock_symbol_ratio,
         shared_chart],
     )
         ]
