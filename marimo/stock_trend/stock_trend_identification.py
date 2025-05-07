@@ -13,11 +13,7 @@
 import marimo
 
 __generated_with = "0.13.6"
-app = marimo.App(
-    width="full",
-    app_title="Stock Trend Analytics",
-    layout_file="layouts/stock_trend_identification.slides.json",
-)
+app = marimo.App(width="full", app_title="Stock Trend Analytics")
 
 
 @app.cell
