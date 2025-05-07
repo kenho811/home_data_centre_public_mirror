@@ -134,6 +134,7 @@ def load_all_data(pd):
         reversed_trend_config_name_to_val_mapping,
         sample_stock_prices,
         symbols_df,
+        trend_config_df,
         trend_config_name_to_val_mapping,
     )
 
@@ -161,12 +162,16 @@ def demo_one_stock_2(
     one_stock_trend_config_radio,
     pd,
     sample_stock_prices: "pd.DataFrame",
+    trend_config_df: "pd.DataFrame",
 ):
     ## DEMO Methodology
     # OHLC Chart
 
     segmented_df = all_stock_trend[(all_stock_trend['standard_symbol'] == one_stock_symbol_ratio.value) & (all_stock_trend['config_id'] ==  one_stock_trend_config_radio.value)]
     filterd_sample_stock_prices = sample_stock_prices[sample_stock_prices['standard_symbol'] == one_stock_symbol_ratio.value]
+
+
+    current_trigger_diff_ratio: float = float(trend_config_df[trend_config_df["config_id"] == one_stock_trend_config_radio.value]['trigger_diff_ratio'].values[0])
 
     average_price = (
         alt.Chart(filterd_sample_stock_prices)
@@ -276,10 +281,22 @@ def demo_one_stock_2(
             shared_chart
         ]  
 
-    )
+    ), 
+            mo.sql(fr"""select standard_symbol, 
+                       min(utc_datetime) as min_utc_datetime, 
+                       max(utc_datetime) as max_utc_datetime, 
+                       min(average_price) as min_average_price, 
+                       max(average_price) as max_average_price, 
+                       '{current_trigger_diff_ratio}' as trigger_diff_ratio,
+                       max(average_price) - min(average_price) as max_min_diff,
+                       (max(average_price) - min(average_price)) * {current_trigger_diff_ratio} as max_min_diff_multiplied_by_ratio
+                       from filterd_sample_stock_prices
+                       group by 1
+                       ;
+                       """)
         ]
     )
-    return
+    return (filterd_sample_stock_prices,)
 
 
 @app.cell
@@ -475,7 +492,7 @@ def _(
             mo.md(
                 """
                     ## PART II: How do HK stocks trend (By Index)?
-                    
+
                     #### Side by side comparison with 2 different configurations
 
                     """
