@@ -12,12 +12,12 @@
 
 import marimo
 
-__generated_with = "0.13.4"
+__generated_with = "0.13.6"
 app = marimo.App(width="full")
 
 
 @app.cell
-def _(mo):
+def introduction(mo):
     mo.md(
         r"""
     # Stock Trend Analytics - UP/FLAT/DOWN classification
@@ -80,11 +80,15 @@ def _():
 
 
 @app.cell
-def _(pd):
+def load_all_data(pd):
     base_url = "https://raw.githubusercontent.com/kenho811/home_data_centre_public_mirror/refs/heads/main/marimo/stock_trend"
 
     hk_indices_stocks_df: pd.DataFrame = pd.read_csv(
         base_url + "/public/hk_index_constituent_stock.csv"
+    )
+
+    example_9992_stock_price: pd.DataFrame = pd.read_csv(
+        base_url + "/public/9992_average_price_from_2018Jan01_to_2025May02.csv"
     )
 
     hk_indices_df: pd.DataFrame = pd.read_csv(
@@ -108,17 +112,162 @@ def _(pd):
     all_stock_trend["to_utc_datetime"] = pd.to_datetime(
         all_stock_trend["to_utc_datetime"]
     )
+
+
+    trend_config_name_to_val_mapping = {
+       k:v for (k,v) in  sorted([(d.get("display_name"), d.get("config_id")) for d in trend_config_df.to_dict(orient="records")], key=lambda x:x[0])
+    }
+
+    reversed_trend_config_name_to_val_mapping = {
+        v: k for k, v in trend_config_name_to_val_mapping.items()
+    }
+
+
     return (
         all_stock_trend,
+        example_9992_stock_price,
         hk_indices_df,
         hk_indices_stocks_df,
+        reversed_trend_config_name_to_val_mapping,
         symbols_df,
-        trend_config_df,
+        trend_config_name_to_val_mapping,
     )
 
 
 @app.cell
-def _(List, hk_indices_stocks_df, mo):
+def demo_one_stock_1(mo, trend_config_name_to_val_mapping):
+    methodlogy_trend_config_radio = mo.ui.radio(label="Trend Config",
+        value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3",
+        options=trend_config_name_to_val_mapping,
+    )
+    return (methodlogy_trend_config_radio,)
+
+
+@app.cell
+def demo_one_stock_2(
+    all_stock_trend,
+    alt,
+    example_9992_stock_price: "pd.DataFrame",
+    methodlogy_trend_config_radio,
+    mo,
+    pd,
+):
+    ## DEMO Methodology
+    # OHLC Chart
+
+    segmented_df = all_stock_trend[(all_stock_trend['standard_symbol'] == 'SEHK:09992') & (all_stock_trend['config_id'] ==  methodlogy_trend_config_radio.value)]
+
+
+    average_price = (
+        alt.Chart(example_9992_stock_price)
+        .mark_line()
+        .encode(
+            x="utc_datetime:T",
+            y="average_price:Q",
+        )
+        .properties(width=1000, height=300)
+    ).interactive()
+
+
+    area_marks = (
+        alt.Chart(
+            pd.DataFrame(
+                segmented_df,
+                columns=list(segmented_df.columns),
+            )
+        )
+        .mark_rect(opacity=0.5)
+        .encode(
+            x="from_utc_datetime:T",
+            x2="to_utc_datetime:T",
+            y=alt.value(0),  # starts at bottom of chart
+            y2=alt.value(400),  # height of your chart
+            color=alt.Color(
+                "trend:N",
+                scale=alt.Scale(
+                    domain=["Up", "Down", "Flat"],
+                    range=["green", "red", "gray"]
+                ),
+                legend=None
+            ),
+            tooltip=list(segmented_df.columns),
+        )
+    )
+
+
+    # Create a DataFrame with Jan 1 dates for each year in your data
+    min_year = segmented_df['from_utc_datetime'].min().year
+    max_year = segmented_df['to_utc_datetime'].max().year
+    jan1_dates = pd.DataFrame({
+        'jan1_date': pd.to_datetime([f'{year}-01-01' for year in range(min_year, max_year + 1)])
+    })
+
+    # Create the rule layer for Jan 1 markers
+    jan1_rules = alt.Chart(jan1_dates).mark_rule(
+        color='black',
+        strokeDash=[5, 5],  # Makes the line dashed
+        strokeWidth=1
+    ).encode(
+        x='jan1_date:T'
+    )
+
+    # Create the year labels layer
+    year_labels = alt.Chart(jan1_dates).mark_text(
+        align='left',
+        baseline='top',
+        dx=5,  # Small horizontal offset from the line
+        dy=5,  # Small vertical offset (positions above the chart)
+        fontSize=10
+    ).encode(
+        x='jan1_date:T',
+        text=alt.Text('year(jan1_date):N'),  # Extract just the year
+        y=alt.value(0)  # Position at top of chart
+    )
+
+
+    # Combine the charts
+    _chart = (average_price + area_marks + jan1_rules + year_labels).configure_view(
+        stroke='transparent'
+    ).configure_axis(
+        labelLimit=100
+    ).properties(
+        title='Stock Trend Changes Over Time',
+        width=800,
+    ).resolve_scale(y="independent").interactive()
+
+
+
+    # Create the final chart
+    shared_chart = mo.ui.altair_chart(_chart)
+    shared_chart
+
+
+    mo.vstack(
+        [
+            mo.md(
+            """      
+            # Demonstration
+
+            ## PART I: How does it work for one stock?
+
+            Pick one of the configurations below:
+            """ 
+            ),
+    
+
+    mo.hstack(
+    
+        [
+        methodlogy_trend_config_radio,
+        shared_chart],
+    )
+        ]
+    )
+    return
+
+
+@app.cell
+def _(List, hk_indices_stocks_df: "pd.DataFrame", mo):
     unique_indices: List[str] = sorted(
         hk_indices_stocks_df["standard_index_symbol"].unique()
     )
@@ -133,12 +282,11 @@ def _(List, hk_indices_stocks_df, mo):
 
 @app.cell
 def _(
-    hk_indices_df,
-    hk_indices_stocks_df,
+    hk_indices_stocks_df: "pd.DataFrame",
     index_picker,
     mo,
-    symbols_df,
-    trend_config_df,
+    symbols_df: "pd.DataFrame",
+    trend_config_name_to_val_mapping,
 ):
     stock_name_to_val_mapping = {
         d.get("display_name"): d.get("standard_symbol")
@@ -147,11 +295,6 @@ def _(
         in hk_indices_stocks_df[
             hk_indices_stocks_df["standard_index_symbol"] == index_picker.value
         ]["standard_stock_symbol"].values
-    }
-
-    trend_config_name_to_val_mapping = {
-        d.get("display_name"): d.get("config_id")
-        for d in trend_config_df.to_dict(orient="records")
     }
 
 
@@ -175,33 +318,7 @@ def _(
         options=trend_config_name_to_val_mapping,
     )
 
-    mo.vstack(
-        [
-            mo.md(
-                """
-                    ## Playground
-                    """
-            ),
-            mo.hstack(
-                [
-                    index_picker,
-                    symbols_picker,
-                ],
-                justify="center",
-            ),
-            mo.ui.table(hk_indices_df),
-            mo.hstack(
-                [trend_config_left_picker, trend_config_right_picker],
-                justify="center",
-            ),
-        ]
-    )
-    return (
-        symbols_picker,
-        trend_config_left_picker,
-        trend_config_name_to_val_mapping,
-        trend_config_right_picker,
-    )
+    return symbols_picker, trend_config_left_picker, trend_config_right_picker
 
 
 @app.cell
@@ -232,17 +349,17 @@ def _(
 @app.cell
 def _(
     alt,
+    hk_indices_df: "pd.DataFrame",
+    index_picker,
     left_trend_df,
     mo,
     pd,
+    reversed_trend_config_name_to_val_mapping,
     right_trend_df,
+    symbols_picker,
     trend_config_left_picker,
-    trend_config_name_to_val_mapping,
     trend_config_right_picker,
 ):
-    reversed_trend_config_name_to_val_mapping = {
-        v: k for k, v in trend_config_name_to_val_mapping.items()
-    }
 
 
     def generate_chart(trend_df: pd.DataFrame, config_display_name: str):
@@ -335,7 +452,34 @@ def _(
         ),
     )
 
-    mo.hstack([left_final_chart, right_final_chart])
+
+
+    mo.vstack(
+        [
+            mo.md(
+                """
+                    ## PART II: How does it look for all constituents stocks by index?
+                    ### Compared across 2 configurations    
+                
+                    """
+            ),
+            mo.hstack(
+                [
+                    index_picker,
+                    symbols_picker,
+                ],
+                justify="center",
+            ),
+            mo.ui.table(hk_indices_df),
+            mo.hstack(
+                [trend_config_left_picker, trend_config_right_picker],
+                justify="center",
+            ),
+            mo.hstack([left_final_chart, right_final_chart])
+        ]
+    )
+
+
     return
 
 
