@@ -13,7 +13,10 @@
 import marimo
 
 __generated_with = "0.13.6"
-app = marimo.App(width="full")
+app = marimo.App(
+    width="full",
+    layout_file="layouts/stock_trend_identification.slides.json",
+)
 
 
 @app.cell
@@ -262,11 +265,16 @@ def demo_one_stock_2(
     
 
     mo.hstack(
-    
         [
+        mo.vstack(
+            [
         one_stock_trend_config_radio,
-        one_stock_symbol_ratio,
-        shared_chart],
+        one_stock_symbol_ratio,            
+            ]
+        ),
+            shared_chart
+        ]  
+
     )
         ]
     )
