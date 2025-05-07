@@ -15,6 +15,7 @@ import marimo
 __generated_with = "0.13.6"
 app = marimo.App(
     width="full",
+    app_title="Stock Trend Analytics",
     layout_file="layouts/stock_trend_identification.slides.json",
 )
 
@@ -262,7 +263,7 @@ def demo_one_stock_2(
             Pick one of the configurations below:
             """ 
             ),
-    
+
 
     mo.hstack(
         [
@@ -475,7 +476,7 @@ def _(
                 """
                     ## PART II: How does it look for all constituents stocks by index?
                     ### Compared across 2 configurations    
-                
+
                     """
             ),
             mo.hstack(
