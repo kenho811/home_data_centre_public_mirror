@@ -88,7 +88,8 @@ def load_all_data(pd):
     )
 
     sample_stock_prices: pd.DataFrame = pd.read_csv(
-        base_url + "/public/0001_2216_9992_average_price_from_2018Jan01_to_2025May02.csv"
+        base_url
+        + "/public/0001_2216_9992_average_price_from_2018Jan01_to_2025May02.csv"
     )
 
     hk_indices_df: pd.DataFrame = pd.read_csv(
@@ -115,14 +116,19 @@ def load_all_data(pd):
 
 
     trend_config_name_to_val_mapping = {
-       k:v for (k,v) in  sorted([(d.get("display_name"), d.get("config_id")) for d in trend_config_df.to_dict(orient="records")], key=lambda x:x[0])
+        k: v
+        for (k, v) in sorted(
+            [
+                (d.get("display_name"), d.get("config_id"))
+                for d in trend_config_df.to_dict(orient="records")
+            ],
+            key=lambda x: x[0],
+        )
     }
 
     reversed_trend_config_name_to_val_mapping = {
         v: k for k, v in trend_config_name_to_val_mapping.items()
     }
-
-
     return (
         all_stock_trend,
         hk_indices_df,
@@ -137,14 +143,16 @@ def load_all_data(pd):
 
 @app.cell
 def demo_one_stock_1(mo, trend_config_name_to_val_mapping):
-    one_stock_trend_config_radio = mo.ui.radio(label="Trend Config",
+    one_stock_trend_config_radio = mo.ui.radio(
+        label="Trend Config",
         value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3",
         options=trend_config_name_to_val_mapping,
     )
 
-    one_stock_symbol_ratio = mo.ui.radio(label="Stock Config",
-        value='SEHK:00001',
-        options=['SEHK:00001','SEHK:02216', 'SEHK:09992']
+    one_stock_symbol_ratio = mo.ui.radio(
+        label="Stock Config",
+        value="SEHK:00001",
+        options=["SEHK:00001", "SEHK:02216", "SEHK:09992"],
     )
     return one_stock_symbol_ratio, one_stock_trend_config_radio
 
@@ -163,11 +171,20 @@ def demo_one_stock_2(
     ## DEMO Methodology
     # OHLC Chart
 
-    segmented_df = all_stock_trend[(all_stock_trend['standard_symbol'] == one_stock_symbol_ratio.value) & (all_stock_trend['config_id'] ==  one_stock_trend_config_radio.value)]
-    filterd_sample_stock_prices = sample_stock_prices[sample_stock_prices['standard_symbol'] == one_stock_symbol_ratio.value]
+    segmented_df = all_stock_trend[
+        (all_stock_trend["standard_symbol"] == one_stock_symbol_ratio.value)
+        & (all_stock_trend["config_id"] == one_stock_trend_config_radio.value)
+    ]
+    filterd_sample_stock_prices = sample_stock_prices[
+        sample_stock_prices["standard_symbol"] == one_stock_symbol_ratio.value
+    ]
 
 
-    current_trigger_diff_ratio: float = float(trend_config_df[trend_config_df["config_id"] == one_stock_trend_config_radio.value]['trigger_diff_ratio'].values[0])
+    current_trigger_diff_ratio: float = float(
+        trend_config_df[
+            trend_config_df["config_id"] == one_stock_trend_config_radio.value
+        ]["trigger_diff_ratio"].values[0]
+    )
 
     average_price = (
         alt.Chart(filterd_sample_stock_prices)
@@ -196,10 +213,9 @@ def demo_one_stock_2(
             color=alt.Color(
                 "trend:N",
                 scale=alt.Scale(
-                    domain=["Up", "Down", "Flat"],
-                    range=["green", "red", "gray"]
+                    domain=["Up", "Down", "Flat"], range=["green", "red", "gray"]
                 ),
-                legend=None
+                legend=None,
             ),
             tooltip=list(segmented_df.columns),
         )
@@ -207,45 +223,57 @@ def demo_one_stock_2(
 
 
     # Create a DataFrame with Jan 1 dates for each year in your data
-    min_year = segmented_df['from_utc_datetime'].min().year
-    max_year = segmented_df['to_utc_datetime'].max().year
-    jan1_dates = pd.DataFrame({
-        'jan1_date': pd.to_datetime([f'{year}-01-01' for year in range(min_year, max_year + 1)])
-    })
+    min_year = segmented_df["from_utc_datetime"].min().year
+    max_year = segmented_df["to_utc_datetime"].max().year
+    jan1_dates = pd.DataFrame(
+        {
+            "jan1_date": pd.to_datetime(
+                [f"{year}-01-01" for year in range(min_year, max_year + 1)]
+            )
+        }
+    )
 
     # Create the rule layer for Jan 1 markers
-    jan1_rules = alt.Chart(jan1_dates).mark_rule(
-        color='black',
-        strokeDash=[5, 5],  # Makes the line dashed
-        strokeWidth=1
-    ).encode(
-        x='jan1_date:T'
+    jan1_rules = (
+        alt.Chart(jan1_dates)
+        .mark_rule(
+            color="black",
+            strokeDash=[5, 5],  # Makes the line dashed
+            strokeWidth=1,
+        )
+        .encode(x="jan1_date:T")
     )
 
     # Create the year labels layer
-    year_labels = alt.Chart(jan1_dates).mark_text(
-        align='left',
-        baseline='top',
-        dx=5,  # Small horizontal offset from the line
-        dy=5,  # Small vertical offset (positions above the chart)
-        fontSize=10
-    ).encode(
-        x='jan1_date:T',
-        text=alt.Text('year(jan1_date):N'),  # Extract just the year
-        y=alt.value(0)  # Position at top of chart
+    year_labels = (
+        alt.Chart(jan1_dates)
+        .mark_text(
+            align="left",
+            baseline="top",
+            dx=5,  # Small horizontal offset from the line
+            dy=5,  # Small vertical offset (positions above the chart)
+            fontSize=10,
+        )
+        .encode(
+            x="jan1_date:T",
+            text=alt.Text("year(jan1_date):N"),  # Extract just the year
+            y=alt.value(0),  # Position at top of chart
+        )
     )
 
 
     # Combine the charts
-    _chart = (average_price + area_marks + jan1_rules + year_labels).configure_view(
-        stroke='transparent'
-    ).configure_axis(
-        labelLimit=100
-    ).properties(
-        title='Stock Trend Changes Over Time',
-        width=800,
-    ).resolve_scale(y="independent").interactive()
-
+    _chart = (
+        (average_price + area_marks + jan1_rules + year_labels)
+        .configure_view(stroke="transparent")
+        .configure_axis(labelLimit=100)
+        .properties(
+            title="Stock Trend Changes Over Time",
+            width=800,
+        )
+        .resolve_scale(y="independent")
+        .interactive()
+    )
 
 
     # Create the final chart
@@ -256,29 +284,26 @@ def demo_one_stock_2(
     mo.vstack(
         [
             mo.md(
-            """      
+                """      
             # Demonstration
 
             ## PART I: How does it work for one stock?
 
             Pick one of the configurations below:
-            """ 
+            """
             ),
-
-
-    mo.hstack(
-        [
-        mo.vstack(
-            [
-        one_stock_trend_config_radio,
-        one_stock_symbol_ratio,            
-            ]
-        ),
-            shared_chart
-        ]  
-
-    ), 
-            mo.sql(fr"""select standard_symbol, 
+            mo.hstack(
+                [
+                    mo.vstack(
+                        [
+                            one_stock_trend_config_radio,
+                            one_stock_symbol_ratio,
+                        ]
+                    ),
+                    shared_chart,
+                ]
+            ),
+            mo.sql(rf"""select standard_symbol, 
                        min(utc_datetime) as min_utc_datetime, 
                        max(utc_datetime) as max_utc_datetime, 
                        min(average_price) as min_average_price, 
@@ -289,7 +314,7 @@ def demo_one_stock_2(
                        from filterd_sample_stock_prices
                        group by 1
                        ;
-                       """)
+                       """),
         ]
     )
     return (filterd_sample_stock_prices,)
@@ -346,33 +371,50 @@ def _(
         value="From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3",
         options=trend_config_name_to_val_mapping,
     )
-
     return symbols_picker, trend_config_left_picker, trend_config_right_picker
 
 
 @app.cell
 def _(
+    List,
     all_stock_trend,
     mo,
     symbols_picker,
     trend_config_left_picker,
     trend_config_right_picker,
 ):
-    def generate_trend_df(trend_config_id: str):
+    def generate_trend_df(trend_config_id: str, symbols: List):
         return mo.sql(
             f"""
         select *  from  all_stock_trend
-        where standard_symbol in ( {",".join([f"'{s}'" for s in symbols_picker.value])} )
+        where standard_symbol in ( {",".join([f"'{s}'" for s in symbols])} )
         and  config_id = '{trend_config_id}'
         order by standard_symbol, from_utc_datetime
         """,
             output=False,
         )
 
+    if symbols_picker.value:
+        part_2_message = 'OK'
+    
+        left_trend_df = generate_trend_df(
+            trend_config_left_picker.value, symbols=symbols_picker.value
+        )
+        right_trend_df = generate_trend_df(
+            trend_config_right_picker.value, symbols=symbols_picker.value
+        )
+    else:
+        DEFAULT = ['SEHK:00001']
+        part_2_message = f'WARNING: NO STOCKS ARE CHOSEN. DEFAULTED TO {DEFAULT=}'
+        left_trend_df = generate_trend_df(
+            trend_config_left_picker.value, symbols=DEFAULT
+        )
+        right_trend_df = generate_trend_df(
+            trend_config_right_picker.value, symbols=DEFAULT
+        )
 
-    left_trend_df = generate_trend_df(trend_config_left_picker.value)
-    right_trend_df = generate_trend_df(trend_config_right_picker.value)
-    return left_trend_df, right_trend_df
+    
+    return left_trend_df, part_2_message, right_trend_df
 
 
 @app.cell
@@ -382,6 +424,7 @@ def _(
     index_picker,
     left_trend_df,
     mo,
+    part_2_message,
     pd,
     reversed_trend_config_name_to_val_mapping,
     right_trend_df,
@@ -389,8 +432,6 @@ def _(
     trend_config_left_picker,
     trend_config_right_picker,
 ):
-
-
     def generate_chart(trend_df: pd.DataFrame, config_display_name: str):
         # Create the chart
         main_chart = (
@@ -482,7 +523,6 @@ def _(
     )
 
 
-
     mo.vstack(
         [
             mo.md(
@@ -493,6 +533,15 @@ def _(
 
                     """
             ),
+        
+        
+            mo.md(    f"""
+                /// admonition | Part II Viz Status:
+            
+                {part_2_message}
+                ///
+                """),
+
             mo.hstack(
                 [
                     index_picker,
@@ -505,11 +554,9 @@ def _(
                 [trend_config_left_picker, trend_config_right_picker],
                 justify="center",
             ),
-            mo.hstack([left_final_chart, right_final_chart])
+            mo.hstack([left_final_chart, right_final_chart]),
         ]
     )
-
-
     return
 
 
