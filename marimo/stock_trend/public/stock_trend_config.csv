@@ -1,4 +1,4 @@
-﻿config_id,display_name
-ade0c488c152a27821f2533f0074b81b,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.7
-9667503d25ecf2f10c88ec03fbf2d3ae,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3
-f42fb81a3fec22c9468f95a7a5c69f1d,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.5
+﻿config_id,display_name,trigger_diff_ratio
+ade0c488c152a27821f2533f0074b81b,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.7,0.7
+9667503d25ecf2f10c88ec03fbf2d3ae,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.3,0.3
+f42fb81a3fec22c9468f95a7a5c69f1d,From 2018-01-01 00:00:00.000 to 2025-05-02 00:00:00.000 with trigger ratio 0.5,0.5
