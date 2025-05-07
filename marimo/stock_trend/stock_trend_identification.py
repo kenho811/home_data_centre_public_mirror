@@ -474,8 +474,9 @@ def _(
         [
             mo.md(
                 """
-                    ## PART II: How does it look for all constituents stocks by index?
-                    ### Compared across 2 configurations    
+                    ## PART II: How do HK stocks trend (By Index)?
+                    
+                    #### Side by side comparison with 2 different configurations
 
                     """
             ),
