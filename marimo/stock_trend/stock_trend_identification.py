@@ -17,6 +17,19 @@ app = marimo.App(width="full", app_title="Stock Trend Analytics")
 
 
 @app.cell
+def _():
+    import marimo as mo
+
+    mo.vstack([
+
+        mo.video('https://www.youtube.com/watch?v=oz_c2a3FgTM&t=107s')
+    
+    ])
+
+    return (mo,)
+
+
+@app.cell
 def introduction(mo):
     mo.md(
         r"""
@@ -73,10 +86,9 @@ def _():
     import datetime
     import numpy as np
     import os
-    import marimo as mo
     from typing import List
     from pathlib import Path
-    return List, alt, mo, pd
+    return List, alt, pd
 
 
 @app.cell
@@ -276,7 +288,7 @@ def demo_one_stock_2(
     if on_off_trend_overlay.value == 'On':
         all_charts += area_marks + jan1_rules + year_labels
 
-    
+
 
     # Combine the charts
     _chart = (
