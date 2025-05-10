@@ -154,7 +154,17 @@ def demo_one_stock_1(mo, trend_config_name_to_val_mapping):
         value="SEHK:00001",
         options=["SEHK:00001", "SEHK:02216", "SEHK:09992"],
     )
-    return one_stock_symbol_ratio, one_stock_trend_config_radio
+
+    on_off_trend_overlay = mo.ui.radio(
+        label="Trend Overlay",
+        value="On",
+        options=["On", "Off"],
+    )
+    return (
+        on_off_trend_overlay,
+        one_stock_symbol_ratio,
+        one_stock_trend_config_radio,
+    )
 
 
 @app.cell
@@ -162,6 +172,7 @@ def demo_one_stock_2(
     all_stock_trend,
     alt,
     mo,
+    on_off_trend_overlay,
     one_stock_symbol_ratio,
     one_stock_trend_config_radio,
     pd,
@@ -261,10 +272,15 @@ def demo_one_stock_2(
         )
     )
 
+    all_charts = average_price + jan1_rules + year_labels
+    if on_off_trend_overlay.value == 'On':
+        all_charts += area_marks + jan1_rules + year_labels
+
+    
 
     # Combine the charts
     _chart = (
-        (average_price + area_marks + jan1_rules + year_labels)
+        (all_charts)
         .configure_view(stroke="transparent")
         .configure_axis(labelLimit=100)
         .properties(
@@ -296,6 +312,7 @@ def demo_one_stock_2(
                 [
                     mo.vstack(
                         [
+                            on_off_trend_overlay,
                             one_stock_trend_config_radio,
                             one_stock_symbol_ratio,
                         ]
@@ -396,7 +413,7 @@ def _(
 
     if symbols_picker.value:
         part_2_message = 'OK'
-    
+
         left_trend_df = generate_trend_df(
             trend_config_left_picker.value, symbols=symbols_picker.value
         )
@@ -413,7 +430,7 @@ def _(
             trend_config_right_picker.value, symbols=DEFAULT
         )
 
-    
+
     return left_trend_df, part_2_message, right_trend_df
 
 
@@ -533,11 +550,11 @@ def _(
 
                     """
             ),
-        
-        
+
+
             mo.md(    f"""
                 /// admonition | Part II Viz Status:
-            
+
                 {part_2_message}
                 ///
                 """),
