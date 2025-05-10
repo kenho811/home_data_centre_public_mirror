@@ -22,7 +22,9 @@ def _():
 
     mo.vstack([
 
-        mo.video('https://www.youtube.com/watch?v=oz_c2a3FgTM&t=107s')
+        mo.video(src='https://www.youtube.com/watch?v=oz_c2a3FgTM&t=107s',
+                 controls=False,
+                 autoplay=True)
     
     ])
 
