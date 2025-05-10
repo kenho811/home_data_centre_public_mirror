@@ -22,10 +22,10 @@ def _():
 
     mo.vstack([
 
-        mo.video(src='https://www.youtube.com/watch?v=oz_c2a3FgTM&t=107s',
-                 controls=False,
-                 autoplay=True)
-    
+    mo.video(
+        src=mo.notebook_location()/ 'public' / 'segment_candlestick_chart_for_trend_analysis.mp4'
+    )
+
     ])
 
     return (mo,)
