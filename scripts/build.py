@@ -83,7 +83,9 @@ def generate_index(all_notebooks: List[str], output_dir: str) -> None:
         print(f"Error generating index.html: {e}")
 
 
-def main() -> None:
+def main(
+        notebook_directories: List
+) -> None:
     parser = argparse.ArgumentParser(description="Build marimo notebooks")
     parser.add_argument(
         "--output-dir", default="_site", help="Output directory for built files"
@@ -91,7 +93,7 @@ def main() -> None:
     args = parser.parse_args()
 
     all_notebooks: List[str] = []
-    for directory in ["stock_trend"]:
+    for directory in notebook_directories:
         dir_path = Path('marimo').joinpath(directory)
         if not dir_path.exists():
             print(f"Warning: Directory not found: {dir_path}")
@@ -112,4 +114,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    notebook_directories = [
+        'stock_trend',
+        'ccass_correlation'
+    ]
+    main(notebook_directories)
