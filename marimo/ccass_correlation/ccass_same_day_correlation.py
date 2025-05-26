@@ -135,7 +135,7 @@ def _():
             - Citibank (C00010) is the largest shareholder throughout the period. However, it shows negative correlation with stock price (around -0.4) with small p-value. So it is statistically significant''',
             'SCALED_SHAREHOLDING_AMOUNT_VS_PRICE': '''
             - For Citibank (C00010), notice how the shareholding surged in Apr 2024 when the stock was still relatively low in the  period (at 1 HKD). It stayed high until Dec 2024 and it reduced shareholding. It is at that point that the price surged. This shows that Citigroup has been `accumulating shares` and only later on did the price surged.''',
-       
+
         },
 
 
@@ -278,7 +278,7 @@ def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
         [
             mo.md('## Stock Price'),
             stock_price_chart,
-  
+
             mo.md(
              legend_dict.get(standard_symbol.value).get('STOCK_PRICE')
             )
@@ -289,8 +289,10 @@ def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
 
 @app.cell
 def _(alt, legend_dict, mo, standard_symbol, statistics_data):
+    filtered_statistics = statistics_data[statistics_data['standard_symbol'] == standard_symbol.value]
+
     spearmans_chart = (
-        alt.Chart(statistics_data)
+        alt.Chart(filtered_statistics)
         .mark_circle(size=60)
         .encode(
             y="average_shareholding_amount",
@@ -323,16 +325,16 @@ def _(alt, legend_dict, mo, standard_symbol, statistics_data):
 
     mo.vstack(
         [
-   
+
               mo.md('''
               ## Spearman's Rank 
 
               - X-axis: Spearman Rank. -1 means a very negative correlation. 0 means no correlation. 1 means a very positive correlation.
               - Y-axis: Average shareholding amount of the ccass participant. The higher the amount, the more shares are held by the ccass participant
               '''),
-        
+
             (spearmans_chart + text_conditioned),
-        
+
         mo.md(
              legend_dict.get(standard_symbol.value).get('SPEARMANS_RANK')
             )
@@ -406,11 +408,11 @@ def _(correlation_chart, legend_dict, mo, participant_ids, standard_symbol):
             ),
             participant_ids,
             correlation_chart,
-        
+
           mo.md(
              legend_dict.get(standard_symbol.value).get('SCALED_SHAREHOLDING_AMOUNT_VS_PRICE')
         )
-        
+
         ]
     )
     return
