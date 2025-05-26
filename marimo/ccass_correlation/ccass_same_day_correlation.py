@@ -146,7 +146,7 @@ def _():
             - Notice how SEHK:02216 stays below 1 HKD in the first 3 months of 2025. Then in Apr 2024, it climbed up and reached 2.5 HKD in May 2025.
             ''',
             'SPEARMANS_RANK': '''
-            - Whie Futu (B01955) only has the 2nd largest shareholding amount throughout the period, it shows a positive correlation of 0.7 with small p-value. So it is statistically significant''',
+            - While Futu (B01955) only has the 2nd largest shareholding amount throughout the period, it shows a positive correlation of 0.7 with small p-value. So it is statistically significant''',
             'SCALED_SHAREHOLDING_AMOUNT_VS_PRICE': '''
             - For Futu (B01955), notice how its shareholding amount follows closely that of the price. It means that retail clients in Futu is doing a good job "prediciting" stock price movement. ''',
         }
