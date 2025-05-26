@@ -28,9 +28,6 @@ def _():
     import plotly.graph_objects as go
     import altair as alt
 
-
-    alt.data_transformers.disable_max_rows()
-
     return alt, mo, pd
 
 
