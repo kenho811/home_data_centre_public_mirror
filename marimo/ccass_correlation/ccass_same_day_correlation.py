@@ -28,7 +28,11 @@ def _():
     import plotly.graph_objects as go
     import altair as alt
 
-    _ = alt.data_transformers.disable_max_rows()
+
+    os.environ["MARIMO_OUTPUT_MAX_BYTES"] = "100000000"
+
+    alt.data_transformers.disable_max_rows()
+
     return alt, mo, pd
 
 
