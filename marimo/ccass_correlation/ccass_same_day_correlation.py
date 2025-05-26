@@ -29,8 +29,6 @@ def _():
     import altair as alt
 
 
-    os.environ["MARIMO_OUTPUT_MAX_BYTES"] = "100000000"
-
     alt.data_transformers.disable_max_rows()
 
     return alt, mo, pd
@@ -390,17 +388,19 @@ def _(mo, standard_symbol):
         "B01904",
     ]
 
+    all_selectable_participant_ids = smart_money_participant_ids + dumb_money_participant_ids
+
 
 
     participant_ids = mo.ui.multiselect(
         value=standard_symbol_vs_default_participant_mapping.get(standard_symbol.value),
         label="participant_ids",
-        options=smart_money_participant_ids + dumb_money_participant_ids,
+        options=all_selectable_participant_ids,
         max_selections=10,
     )
 
 
-    return (participant_ids,)
+    return all_selectable_participant_ids, participant_ids
 
 
 @app.cell
@@ -423,11 +423,20 @@ def _(correlation_chart, legend_dict, mo, participant_ids, standard_symbol):
 
 
 @app.cell
-def _(alt, combined_data, participant_ids, standard_symbol):
+def _(
+    all_selectable_participant_ids,
+    alt,
+    combined_data,
+    participant_ids,
+    standard_symbol,
+):
     title = f"""{standard_symbol.value}: Selected Participants's Correlation with Stock Price"""
 
 
-    filtered_combined_data = combined_data[combined_data['standard_symbol'] == standard_symbol.value]
+    filtered_combined_data = combined_data[
+        (combined_data['standard_symbol'] == standard_symbol.value) &
+        (combined_data['participant_id'].isin(all_selectable_participant_ids))
+    ]
 
     # Base chart for the first line (scaled_close)
     line1 = alt.Chart(filtered_combined_data).mark_line(color='blue').encode(
