@@ -3,7 +3,6 @@
 # dependencies = [
 #     "altair==5.5.0",
 #     "duckdb==1.3.0",
-#     "hofamily-core==6.2.1",
 #     "marimo",
 #     "numpy==2.2.6",
 #     "pandas==2.2.3",
@@ -21,9 +20,6 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    from hofamily_core.transports.db_transports.dremio_db_transport import (
-        DremioDBTransport,
-    )
     import pandas as pd
     import datetime
     import numpy as np
