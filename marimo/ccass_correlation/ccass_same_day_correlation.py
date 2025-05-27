@@ -36,7 +36,7 @@ def _(mo):
     mo.md(
         r"""
     # Is Following 'Smart Money' and Avoiding 'Dumb Money' a Viable Strategy?"
-    
+
     ##### A case study on correlating stock price with HKEX Ccass Participants' shareholding data
 
     ## Disclaimer
@@ -391,25 +391,25 @@ def _(mo, standard_symbol):
 
 
 
-    participant_ids = mo.ui.multiselect(
-        value=standard_symbol_vs_default_participant_mapping.get(standard_symbol.value),
-        label="participant_ids",
+    participant_id = mo.ui.dropdown(
+        value=standard_symbol_vs_default_participant_mapping.get(standard_symbol.value)[0],
+        label="participant_id",
         options=all_selectable_participant_ids,
-        max_selections=10,
+        # max_selections=10,
     )
 
 
-    return all_selectable_participant_ids, participant_ids
+    return (participant_id,)
 
 
 @app.cell
-def _(correlation_chart, legend_dict, mo, participant_ids, standard_symbol):
+def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
     mo.vstack(
         [
             mo.md(
              '## Min-Max scaled Shareholding Amount against Min-Max scaled stock price'
             ),
-            participant_ids,
+            participant_id,
             correlation_chart,
 
           mo.md(
@@ -422,19 +422,13 @@ def _(correlation_chart, legend_dict, mo, participant_ids, standard_symbol):
 
 
 @app.cell
-def _(
-    all_selectable_participant_ids,
-    alt,
-    combined_data,
-    participant_ids,
-    standard_symbol,
-):
+def _(alt, combined_data, participant_id, standard_symbol):
     title = f"""{standard_symbol.value}: Selected Participants's Correlation with Stock Price"""
 
 
     filtered_combined_data = combined_data[
         (combined_data['standard_symbol'] == standard_symbol.value) &
-        (combined_data['participant_id'].isin(all_selectable_participant_ids))
+        (combined_data['participant_id'] == participant_id.value)
     ]
 
     # Base chart for the first line (scaled_close)
@@ -464,11 +458,7 @@ def _(
     ).transform_calculate(
             # Create a new field that combines participant_id and participant_name
             display_participant_id='datum.participant_id + " ( " + datum.participant_name + " ) " '
-        ).transform_filter(
-            alt.FieldOneOfPredicate(
-                field="participant_id", oneOf=participant_ids.value
-            )
-        ).facet("display_participant_id:N", columns=3).resolve_scale(
+        ).resolve_scale(
         y='independent'
     ).properties(
         title=title,
