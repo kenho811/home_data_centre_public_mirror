@@ -472,22 +472,14 @@ def _(
     line1 = alt.Chart(filtered_combined_data).mark_line(color='blue').encode(
         x="as_of_date_tz08",
         y=alt.Y("scaled_close", axis=alt.Axis(title='Scaled Close', titleColor='blue')),
-        tooltip=[
-            "as_of_date_tz08",
-            "close",
-            "scaled_close"
-        ]
+        tooltip=[c for c in filtered_combined_data.columns]
     )
 
     # Base chart for the second line (scaled_shareholding_amount)
     line2 = alt.Chart(filtered_combined_data).mark_line(color='red').encode(
         x="as_of_date_tz08",
         y=alt.Y("scaled_shareholding_amount", axis=alt.Axis(title='Scaled Shareholding Amount', titleColor='red')),
-        tooltip=[
-            "as_of_date_tz08",
-            "shareholding_amount",
-            "scaled_shareholding_amount",
-        ]
+        tooltip=[c for c in filtered_combined_data.columns]
     )
 
     correlation_chart = alt.layer(
