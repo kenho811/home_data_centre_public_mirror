@@ -408,7 +408,7 @@ def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
     mo.vstack(
         [
             mo.md(
-             '## Min-Max scaled Shareholding Amount against Min-Max scaled stock price'
+             '## (Min-Max scaled) Shareholding Amount against stock price'
             ),
             participant_id,
             correlation_chart,
