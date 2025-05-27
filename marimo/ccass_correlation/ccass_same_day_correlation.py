@@ -168,6 +168,7 @@ def _(mo):
     )
 
 
+
     max_p_value = mo.ui.dropdown(
         label="P Value (Reject Null Hypothesis)",
         options=[
@@ -223,7 +224,24 @@ def get_data_df(pd):
     )
 
     stock_price_df['as_of_date'] = pd.to_datetime(stock_price_df['as_of_date'])
-    return shareholding_amount_df, stock_price_df
+
+
+    stock_name_df = pd.read_csv(
+        base_url
+        + "/public/hkex_ccass_stock.csv"
+    )
+
+
+    hkex_ccass_participant_df = pd.read_csv(
+        base_url
+        + "/public/hkex_ccass_participant.csv"
+    )
+    return (
+        hkex_ccass_participant_df,
+        shareholding_amount_df,
+        stock_name_df,
+        stock_price_df,
+    )
 
 
 @app.cell
@@ -260,7 +278,7 @@ def _(mo, shareholding_amount_df: "pd.DataFrame", stock_price_df):
 
 
 @app.cell
-def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
+def _(alt, legend_dict, mo, standard_symbol, stock_name, stock_price_df):
     filtered_stock_price_df = stock_price_df[stock_price_df['standard_symbol'] == standard_symbol.value]
 
 
@@ -271,14 +289,14 @@ def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
               y='close',
               tooltip=['as_of_date', 'close']
               ).properties(
-            title="Stock Price"
+            title=f"{standard_symbol.value} ({stock_name}) Stock Price"
         )
         .interactive()
     )
 
     mo.vstack(
         [
-            mo.md('## Stock Price'),
+            mo.md(f'##  Stock Price '),
             stock_price_chart,
 
             mo.md(
@@ -290,7 +308,7 @@ def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
 
 
 @app.cell
-def _(alt, legend_dict, mo, standard_symbol, statistics_data):
+def _(alt, legend_dict, mo, standard_symbol, statistics_data, stock_name):
     filtered_statistics = statistics_data[statistics_data['standard_symbol'] == standard_symbol.value]
 
     spearmans_chart = (
@@ -307,7 +325,7 @@ def _(alt, legend_dict, mo, standard_symbol, statistics_data):
             ),
         )
         .properties(
-            title=f"Spearmans Rank for {standard_symbol.value}"
+            title=f"Spearmans Rank for {standard_symbol.value} ({stock_name})"
         )
         .interactive()
     )
@@ -404,6 +422,18 @@ def _(mo, standard_symbol):
 
 
 @app.cell
+def _(
+    hkex_ccass_participant_df,
+    participant_id,
+    standard_symbol,
+    stock_name_df,
+):
+    stock_name = stock_name_df[stock_name_df['standard_symbol'] == standard_symbol.value]['stock_name'].values[0]
+    participant_name = hkex_ccass_participant_df[hkex_ccass_participant_df['participant_id'] == participant_id.value]['participant_name'].values[0]
+    return participant_name, stock_name
+
+
+@app.cell
 def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
     mo.vstack(
         [
@@ -423,15 +453,18 @@ def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
 
 
 @app.cell
-def _(alt, combined_data, participant_id, standard_symbol):
+def _(
+    alt,
+    combined_data,
+    participant_id,
+    participant_name,
+    standard_symbol,
+    stock_name,
+):
     filtered_combined_data = combined_data[
         (combined_data['standard_symbol'] == standard_symbol.value) &
         (combined_data['participant_id'] == participant_id.value)
     ]
-
-    stock_name = filtered_combined_data['stock_name'].values[0]
-    participant_name = filtered_combined_data['participant_name'].values[0]
-
 
     title = f"""{standard_symbol.value} ({stock_name}): {participant_id.value} ({participant_name}) Correlation with Stock Price"""
 
