@@ -263,6 +263,7 @@ def _(mo, shareholding_amount_df: "pd.DataFrame", stock_price_df):
 def _(alt, legend_dict, mo, standard_symbol, stock_price_df):
     filtered_stock_price_df = stock_price_df[stock_price_df['standard_symbol'] == standard_symbol.value]
 
+
     stock_price_chart =(
           alt.Chart(filtered_stock_price_df).mark_line(
               ).encode(
@@ -423,13 +424,16 @@ def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
 
 @app.cell
 def _(alt, combined_data, participant_id, standard_symbol):
-    title = f"""{standard_symbol.value}: Selected Participants's Correlation with Stock Price"""
-
-
     filtered_combined_data = combined_data[
         (combined_data['standard_symbol'] == standard_symbol.value) &
         (combined_data['participant_id'] == participant_id.value)
     ]
+
+    stock_name = filtered_combined_data['stock_name'].values[0]
+    participant_name = filtered_combined_data['participant_name'].values[0]
+
+
+    title = f"""{standard_symbol.value} ({stock_name}): {participant_id.value} ({participant_name}) Correlation with Stock Price"""
 
     # Base chart for the first line (scaled_close)
     line1 = alt.Chart(filtered_combined_data).mark_line(color='blue').encode(
