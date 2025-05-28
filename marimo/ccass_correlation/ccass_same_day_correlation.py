@@ -261,7 +261,7 @@ def _(mo, shareholding_amount_df: "pl.DataFrame", stock_price_df):
         ), add_scaled_stock_price as (
 
             select *,
-                   case when (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) then 0 else 
+                   case when (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) = 0 then 0 else 
                    ("close" - min("close") over(partition by standard_symbol))/ (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) end as scaled_close
 
             from stock_price_df
