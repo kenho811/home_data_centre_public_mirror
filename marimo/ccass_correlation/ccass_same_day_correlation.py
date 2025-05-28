@@ -206,13 +206,12 @@ def _(legend_dict, mo, standard_symbol):
 
 
 @app.cell
-def get_data_df(pd):
+def get_data_df(mo, pd):
     base_url = "https://raw.githubusercontent.com/kenho811/home_data_centre_public_mirror/refs/heads/main/marimo/ccass_correlation"
 
 
     shareholding_amount_df: pd.DataFrame = pd.read_csv(
-        base_url
-        + "/public/hkex_ccass_stock_participant_shareholding.csv"
+        mo.notebook_dir().joinpath("public/hkex_ccass_stock_participant_shareholding.csv")
     )
 
     shareholding_amount_df['as_of_date_tz08'] = pd.to_datetime(shareholding_amount_df['as_of_date_tz08'])
