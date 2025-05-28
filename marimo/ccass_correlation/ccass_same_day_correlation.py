@@ -7,6 +7,8 @@
 #     "numpy==2.2.6",
 #     "pandas==2.2.3",
 #     "plotly==6.1.1",
+#     "polars==1.30.0",
+#     "pyarrow==20.0.0",
 #     "scipy==1.15.3",
 #     "sqlglot==26.19.0",
 # ]
@@ -14,13 +16,13 @@
 
 import marimo
 
-__generated_with = "0.13.5"
+__generated_with = "0.13.6"
 app = marimo.App(width="medium")
 
 
 @app.cell
 def _():
-    import pandas as pd
+    import polars as pl
     import datetime
     import numpy as np
     import os
@@ -28,7 +30,7 @@ def _():
     import plotly.graph_objects as go
     import altair as alt
 
-    return alt, mo, pd
+    return alt, mo, pl
 
 
 @app.cell
@@ -206,34 +208,37 @@ def _(legend_dict, mo, standard_symbol):
 
 
 @app.cell
-def get_data_df(mo, pd):
-    base_url = "https://raw.githubusercontent.com/kenho811/home_data_centre_public_mirror/refs/heads/main/marimo/ccass_correlation"
-
-
-    shareholding_amount_df: pd.DataFrame = pd.read_csv(
-        mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv")
-    )
-
-    shareholding_amount_df['as_of_date_tz08'] = pd.to_datetime(shareholding_amount_df['as_of_date_tz08'])
-    shareholding_amount_df['ccass_date'] = pd.to_datetime(shareholding_amount_df['ccass_date'])
-
-    stock_price_df = pd.read_csv(
-        base_url
-        + "/public/stock_price.csv"
-    )
-
-    stock_price_df['as_of_date'] = pd.to_datetime(stock_price_df['as_of_date'])
-
-
-    stock_name_df = pd.read_csv(
-        base_url
-        + "/public/hkex_ccass_stock.csv"
+def get_data_df(mo, pl):
+    shareholding_amount_df: pl.DataFrame = pl.read_csv(
+    mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv"),
+         dtypes={
+            "as_of_date_tz08": pl.Datetime,
+            "ccass_date": pl.Datetime,
+            # Add other column type overrides if needed
+        }
     )
 
 
-    hkex_ccass_participant_df = pd.read_csv(
-        base_url
-        + "/public/hkex_ccass_participant.csv"
+
+    stock_price_df = pl.read_csv(
+        mo.notebook_location().joinpath("public/stock_price.csv"),
+         dtypes={
+            "as_of_date": pl.Datetime,
+            # Add other column type overrides if needed
+        }
+    )
+
+
+
+
+    stock_name_df = pl.read_csv(
+        mo.notebook_location().joinpath("public/hkex_ccass_stock.csv")
+
+    )
+
+
+    hkex_ccass_participant_df = pl.read_csv(
+        mo.notebook_location().joinpath("public/hkex_ccass_participant.csv")
     )
     return (
         hkex_ccass_participant_df,
@@ -244,7 +249,7 @@ def get_data_df(mo, pd):
 
 
 @app.cell
-def _(mo, shareholding_amount_df: "pd.DataFrame", stock_price_df):
+def _(mo, shareholding_amount_df: "pl.DataFrame", stock_price_df):
     combined_data = mo.sql(
         f"""
         with add_scaled_shareholding_amount as (
@@ -277,8 +282,10 @@ def _(mo, shareholding_amount_df: "pd.DataFrame", stock_price_df):
 
 
 @app.cell
-def _(alt, legend_dict, mo, standard_symbol, stock_name, stock_price_df):
-    filtered_stock_price_df = stock_price_df[stock_price_df['standard_symbol'] == standard_symbol.value]
+def _(alt, legend_dict, mo, pl, standard_symbol, stock_name, stock_price_df):
+    filtered_stock_price_df = stock_price_df.filter(
+        pl.col('standard_symbol') == standard_symbol.value
+    )
 
 
     stock_price_chart =(
@@ -307,15 +314,17 @@ def _(alt, legend_dict, mo, standard_symbol, stock_name, stock_price_df):
 
 
 @app.cell
-def _(alt, legend_dict, mo, standard_symbol, statistics_data, stock_name):
-    filtered_statistics = statistics_data[statistics_data['standard_symbol'] == standard_symbol.value]
+def _(alt, pl, standard_symbol, statistics_data, stock_name):
+    filtered_statistics = statistics_data.filter(
+        pl.col('standard_symbol') == standard_symbol.value
+    )
 
     spearmans_chart = (
         alt.Chart(filtered_statistics)
         .mark_circle(size=60)
         .encode(
-            y="average_shareholding_amount",
-            x="spearmans_correlation",
+            y="average_shareholding_amount:Q",
+            x="spearmans_correlation:Q",
             tooltip=[col for col in statistics_data.columns],
             color=alt.condition(
                 "datum.can_reject_null_hypothesis === true",  # JavaScript-style boolean check
@@ -342,29 +351,32 @@ def _(alt, legend_dict, mo, standard_symbol, statistics_data, stock_name):
         .interactive()
     )
 
-    mo.vstack(
-        [
+    text_conditioned
 
-              mo.md('''
-              ## Spearman's Rank 
+    # mo.vstack(
+    #     [
 
-              - X-axis: Spearman Rank. -1 means a very negative correlation. 0 means no correlation. 1 means a very positive correlation.
-              - Y-axis: Average shareholding amount of the ccass participant. The higher the amount, the more shares are held by the ccass participant
-              '''),
+    #           mo.md('''
+    #           ## Spearman's Rank 
 
-            (spearmans_chart + text_conditioned),
+    #           - X-axis: Spearman Rank. -1 means a very negative correlation. 0 means no correlation. 1 means a very positive correlation.
+    #           - Y-axis: Average shareholding amount of the ccass participant. The higher the amount, the more shares are held by the ccass participant
+    #           '''),
 
-        mo.md(
-             legend_dict.get(standard_symbol.value).get('SPEARMANS_RANK')
-            )
-        ]
-    )
+    #         (spearmans_chart + text_conditioned),
+
+    #     mo.md(
+    #          legend_dict.get(standard_symbol.value).get('SPEARMANS_RANK')
+    #         )
+    #     ]
+    # )
 
     return
 
 
 @app.cell
 def _(mo, standard_symbol):
+
     standard_symbol_vs_default_participant_mapping = {
         'SEHK:02137': [
             # Citibank
@@ -424,11 +436,21 @@ def _(mo, standard_symbol):
 def _(
     hkex_ccass_participant_df,
     participant_id,
+    pl,
     standard_symbol,
     stock_name_df,
 ):
-    stock_name = stock_name_df[stock_name_df['standard_symbol'] == standard_symbol.value]['stock_name'].values[0]
-    participant_name = hkex_ccass_participant_df[hkex_ccass_participant_df['participant_id'] == participant_id.value]['participant_name'].values[0]
+    stock_name = stock_name_df.filter(
+        pl.col("standard_symbol") == standard_symbol.value
+    ).get_column("stock_name").item(0)
+
+
+    participant_name = (
+        hkex_ccass_participant_df
+        .filter(pl.col("participant_id") == participant_id.value)
+        .get_column("participant_name")
+        .item(0)
+    )
     return participant_name, stock_name
 
 
@@ -457,13 +479,14 @@ def _(
     combined_data,
     participant_id,
     participant_name,
+    pl,
     standard_symbol,
     stock_name,
 ):
-    filtered_combined_data = combined_data[
-        (combined_data['standard_symbol'] == standard_symbol.value) &
-        (combined_data['participant_id'] == participant_id.value)
-    ]
+    filtered_combined_data = combined_data.filter(
+        (pl.col("standard_symbol") == standard_symbol.value) & 
+        (pl.col("participant_id") == participant_id.value)
+    )
 
     title = f"""{standard_symbol.value} ({stock_name}): {participant_id.value} ({participant_name}) Correlation with Stock Price"""
 
@@ -497,7 +520,7 @@ def _(
 
 
 @app.cell
-def _(combined_data, max_p_value, pd):
+def _(combined_data, max_p_value, pl):
     from scipy import stats
 
     dimensions = [
@@ -506,40 +529,54 @@ def _(combined_data, max_p_value, pd):
         "stock_name",
         "participant_name",
     ]
-    # Group by participant_id and calculate average shareholding amount
+
+    # Group by dimensions and calculate average shareholding amount
     grouped = (
-        combined_data.groupby(dimensions)
-        .agg(average_shareholding_amount=("shareholding_amount", "mean"))
-        .reset_index()
+        combined_data
+        .group_by(dimensions)
+        .agg(
+            pl.col("shareholding_amount").mean().alias("average_shareholding_amount")
+        )
     )
 
-
-    # Define a function to calculate Spearman correlation
-    def calculate_spearman(group):
+    def calculate_spearman(df: pl.DataFrame) -> pl.DataFrame:
         correlation, p_value = stats.spearmanr(
-            group["shareholding_amount"], group["close"]
+            df["shareholding_amount"], 
+            df["close"]
         )
-        return pd.Series(
-            {
-                "spearmans_correlation": correlation,
-                "spearmans_p_value": p_value,
-                "can_reject_null_hypothesis": True
-                if p_value <= float(max_p_value.value)
-                else False,
-            }
-        )
+    
+        # Create a dictionary with the existing results
+        result = {
+            "spearmans_correlation": [correlation],
+            "spearmans_p_value": [p_value],
+            "can_reject_null_hypothesis": [p_value <= float(max_p_value.value)]
+        }
+    
+        # Add all columns from dimensions to the result
+        for dimension in dimensions:
+            # We take the first value since we're grouping and want to keep the dimension value
+            result[dimension] = [df[dimension][0]]
+    
+        return pl.DataFrame(result)
 
-
-    # Calculate Spearman correlation for each participant_id
+    # Calculate Spearman correlation for each group
     spearman_results = (
-        combined_data.groupby(dimensions).apply(calculate_spearman).reset_index()
+        combined_data
+        .group_by(*dimensions, maintain_order=True)
+        .map_groups(lambda group_df: calculate_spearman(group_df))
     )
 
 
-    # Merge the two results
-    statistics_data = pd.merge(grouped, spearman_results, on=dimensions)
-    _=statistics_data.sort_values(
-        by=["average_shareholding_amount"], ascending=False
+    # Join the two results
+    statistics_data = (
+        grouped
+        .join(spearman_results, on=dimensions)
+        .sort("average_shareholding_amount", descending=True)
+        .with_columns(
+            pl.col("spearmans_correlation").fill_nan(0),
+            pl.col("spearmans_p_value").fill_nan(100)
+        
+    )
     )
     return (statistics_data,)
 
