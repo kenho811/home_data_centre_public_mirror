@@ -210,7 +210,7 @@ def _(legend_dict, mo, standard_symbol):
 @app.cell
 def get_data_df(mo, pl):
     shareholding_amount_df: pl.DataFrame = pl.read_csv(
-    mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv"),
+    open(mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv")),
          schema_overrides={
             "as_of_date_tz08": pl.Datetime,
             "ccass_date": pl.Datetime,
@@ -221,7 +221,7 @@ def get_data_df(mo, pl):
 
 
     stock_price_df = pl.read_csv(
-        mo.notebook_location().joinpath("public/stock_price.csv"),
+        open(mo.notebook_location().joinpath("public/stock_price.csv")),
          schema_overrides={
             "as_of_date": pl.Datetime,
             # Add other column type overrides if needed
@@ -232,13 +232,13 @@ def get_data_df(mo, pl):
 
 
     stock_name_df = pl.read_csv(
-        mo.notebook_location().joinpath("public/hkex_ccass_stock.csv")
+       open( mo.notebook_location().joinpath("public/hkex_ccass_stock.csv"))
 
     )
 
 
     hkex_ccass_participant_df = pl.read_csv(
-        mo.notebook_location().joinpath("public/hkex_ccass_participant.csv")
+        open(mo.notebook_location().joinpath("public/hkex_ccass_participant.csv"))
     )
     return (
         hkex_ccass_participant_df,
