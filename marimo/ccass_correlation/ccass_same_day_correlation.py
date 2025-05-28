@@ -455,14 +455,23 @@ def _(
 
 
 @app.cell
-def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
+def _(
+    correlation_chart,
+    filtered_combined_data,
+    legend_dict,
+    mo,
+    participant_id,
+    standard_symbol,
+):
     mo.vstack(
         [
             mo.md(
              '## (Min-Max scaled) Shareholding Amount against stock price'
             ),
             participant_id,
-            correlation_chart,
+
+        
+            correlation_chart if not filtered_combined_data.is_empty() else mo.md('No Data'),
 
           mo.md(
              legend_dict.get(standard_symbol.value).get('SCALED_SHAREHOLDING_AMOUNT_VS_PRICE')
@@ -516,7 +525,7 @@ def _(
     ).interactive()
 
 
-    return (correlation_chart,)
+    return correlation_chart, filtered_combined_data
 
 
 @app.cell
