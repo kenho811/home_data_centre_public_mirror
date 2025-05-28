@@ -211,7 +211,7 @@ def _(legend_dict, mo, standard_symbol):
 def get_data_df(mo, pl):
     shareholding_amount_df: pl.DataFrame = pl.read_csv(
     mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv"),
-         dtypes={
+         schema_overrides={
             "as_of_date_tz08": pl.Datetime,
             "ccass_date": pl.Datetime,
             # Add other column type overrides if needed
@@ -222,7 +222,7 @@ def get_data_df(mo, pl):
 
     stock_price_df = pl.read_csv(
         mo.notebook_location().joinpath("public/stock_price.csv"),
-         dtypes={
+         schema_overrides={
             "as_of_date": pl.Datetime,
             # Add other column type overrides if needed
         }
