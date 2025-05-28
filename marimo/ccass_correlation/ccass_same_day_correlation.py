@@ -255,13 +255,14 @@ def _(mo, shareholding_amount_df: "pl.DataFrame", stock_price_df):
         with add_scaled_shareholding_amount as (
 
             select *,
-                   (shareholding_amount - min(shareholding_amount) over(partition by standard_symbol, participant_id)) / (max(shareholding_amount) over(partition by standard_symbol, participant_id) - min(shareholding_amount) over(partition by standard_symbol, participant_id)) as scaled_shareholding_amount
+                    case when max(shareholding_amount) over(partition by standard_symbol, participant_id) - min(shareholding_amount) over(partition by standard_symbol, participant_id) = 0 then 0 else   (shareholding_amount - min(shareholding_amount) over(partition by standard_symbol, participant_id)) / (max(shareholding_amount) over(partition by standard_symbol, participant_id) - min(shareholding_amount) over(partition by standard_symbol, participant_id)) end as scaled_shareholding_amount
             from shareholding_amount_df
 
         ), add_scaled_stock_price as (
 
             select *,
-                   ("close" - min("close") over(partition by standard_symbol))/ (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) as scaled_close
+                   case when (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) then 0 else 
+                   ("close" - min("close") over(partition by standard_symbol))/ (max("close") over(partition by standard_symbol) - min("close") over(partition by standard_symbol)) end as scaled_close
 
             from stock_price_df
 
@@ -314,7 +315,7 @@ def _(alt, legend_dict, mo, pl, standard_symbol, stock_name, stock_price_df):
 
 
 @app.cell
-def _(alt, pl, standard_symbol, statistics_data, stock_name):
+def _(alt, legend_dict, mo, pl, standard_symbol, statistics_data, stock_name):
     filtered_statistics = statistics_data.filter(
         pl.col('standard_symbol') == standard_symbol.value
     )
@@ -351,25 +352,25 @@ def _(alt, pl, standard_symbol, statistics_data, stock_name):
         .interactive()
     )
 
-    text_conditioned
 
-    # mo.vstack(
-    #     [
 
-    #           mo.md('''
-    #           ## Spearman's Rank 
+    mo.vstack(
+        [
 
-    #           - X-axis: Spearman Rank. -1 means a very negative correlation. 0 means no correlation. 1 means a very positive correlation.
-    #           - Y-axis: Average shareholding amount of the ccass participant. The higher the amount, the more shares are held by the ccass participant
-    #           '''),
+              mo.md('''
+              ## Spearman's Rank 
 
-    #         (spearmans_chart + text_conditioned),
+              - X-axis: Spearman Rank. -1 means a very negative correlation. 0 means no correlation. 1 means a very positive correlation.
+              - Y-axis: Average shareholding amount of the ccass participant. The higher the amount, the more shares are held by the ccass participant
+              '''),
 
-    #     mo.md(
-    #          legend_dict.get(standard_symbol.value).get('SPEARMANS_RANK')
-    #         )
-    #     ]
-    # )
+            (spearmans_chart + text_conditioned),
+
+        mo.md(
+             legend_dict.get(standard_symbol.value).get('SPEARMANS_RANK')
+            )
+        ]
+    )
 
     return
 
@@ -455,14 +456,7 @@ def _(
 
 
 @app.cell
-def _(
-    correlation_chart,
-    filtered_combined_data,
-    legend_dict,
-    mo,
-    participant_id,
-    standard_symbol,
-):
+def _(correlation_chart, legend_dict, mo, participant_id, standard_symbol):
     mo.vstack(
         [
             mo.md(
@@ -471,7 +465,7 @@ def _(
             participant_id,
 
         
-            correlation_chart if not filtered_combined_data.is_empty() else mo.md(f'No Data for Participant {participant_id.value}'),
+            correlation_chart,
 
           mo.md(
              legend_dict.get(standard_symbol.value).get('SCALED_SHAREHOLDING_AMOUNT_VS_PRICE')
@@ -525,7 +519,7 @@ def _(
     ).interactive()
 
 
-    return correlation_chart, filtered_combined_data
+    return (correlation_chart,)
 
 
 @app.cell
