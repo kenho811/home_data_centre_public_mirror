@@ -471,7 +471,7 @@ def _(
             participant_id,
 
         
-            correlation_chart if not filtered_combined_data.is_empty() else mo.md('No Data'),
+            correlation_chart if not filtered_combined_data.is_empty() else mo.md(f'No Data for Participant {participant_id.value}'),
 
           mo.md(
              legend_dict.get(standard_symbol.value).get('SCALED_SHAREHOLDING_AMOUNT_VS_PRICE')
