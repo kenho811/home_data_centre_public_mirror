@@ -211,7 +211,7 @@ def get_data_df(mo, pd):
 
 
     shareholding_amount_df: pd.DataFrame = pd.read_csv(
-        mo.notebook_dir().joinpath("public/hkex_ccass_stock_participant_shareholding.csv")
+        mo.notebook_location().joinpath("public/hkex_ccass_stock_participant_shareholding.csv")
     )
 
     shareholding_amount_df['as_of_date_tz08'] = pd.to_datetime(shareholding_amount_df['as_of_date_tz08'])
