@@ -1,4 +1,4 @@
-# Modified from https://github.com/marimo-team/marimo-gh-pages-template
+# Modified from https://github.com/marimo-team/marimo-gh-pages-template
 #!/usr/bin/env python3
 
 import os
@@ -6,6 +6,8 @@ import subprocess
 import argparse
 from typing import List
 from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
 
 
 def export_html_wasm_as_app(notebook_path: str, output_dir: str) -> bool:
@@ -45,42 +47,20 @@ def generate_index(all_notebooks: List[str], output_dir: str) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
     try:
-        with open(index_path, "w") as f:
-            f.write(
-                """<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>marimo</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  </head>
-  <body class="font-sans max-w-2xl mx-auto p-8 leading-relaxed">
-    <div class="mb-8">
-      <img src="https://raw.githubusercontent.com/marimo-team/marimo/main/docs/_static/marimo-logotype-thick.svg" alt="marimo" class="h-20" />
-    </div>
-    <div class="grid gap-4">
-"""
-            )
-            for notebook in all_notebooks:
-                notebook_name = notebook.split("/")[-1].replace(".py", "")
-                display_name = notebook_name.replace("_", " ").title()
+        # Set up Jinja2 environment
+        env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
+        template = env.get_template("index.j2")
 
-                f.write(
-                    f'      <div class="p-4 border border-gray-200 rounded">\n'
-                    f'        <h3 class="text-lg font-semibold mb-2">{display_name}</h3>\n'
-                    f'        <div class="flex gap-2">\n'
-                    f'          <a href="{notebook.replace(".py", ".html")}" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded">Open Notebook</a>\n'
-                    f"        </div>\n"
-                    f"      </div>\n"
-                )
-            f.write(
-                """    </div>
-  </body>
-</html>"""
-            )
+        # Render the template with the notebooks data
+        rendered_html = template.render(all_notebooks=all_notebooks)
+
+        # Write the rendered HTML to file
+        with open(index_path, "w") as f:
+            f.write(rendered_html)
     except IOError as e:
         print(f"Error generating index.html: {e}")
+    except Exception as e:
+        print(f"Error rendering template: {e}")
 
 
 def main(

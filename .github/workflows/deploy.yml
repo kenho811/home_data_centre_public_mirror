@@ -28,7 +28,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          uv pip install marimo==0.13.6
+          uv pip install marimo==0.13.6 Jinja2==3.1.6
 
       - name: 🛠️ Export notebooks
         run: |
