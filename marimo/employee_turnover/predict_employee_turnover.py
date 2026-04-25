@@ -24,7 +24,7 @@ def _(mo):
     mo.md(r"""
     # Employee Turnover
 
-    As explained by Network Contagion Effect, illustrated by public SFC licensed professional data.
+    ### As explained by Network Contagion Effect and illustrated with public HK SFC licensed professional data from 2003 to 2026
     """)
     return
 
