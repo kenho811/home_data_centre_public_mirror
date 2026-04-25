@@ -247,14 +247,11 @@ def _(mo):
     mo.md(r"""
     # Data Preprocessing
 
-    For the purpose of this study on Network Contagion, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
+    ## Data Consolidation & Employment Mapping
 
-    The same company may have different branches and thus having different prinCeRef. An Example is
+    To analyze **Network Contagion** effectively, our dataset focuses strictly on the **duration of employment** at a given firm rather than the specific regulated activities (license types) held by the individual.
 
-    - Get Nice Futures Company Limited
-    - Get Nice Securities Limited
-
-    To make sure a professional is considered to be working for the same company (but different branches), I use the first word in the english name for string matching.
+    A single financial group often operates through multiple legal entities or branches, such as **Get Nice Futures Company Limited** and **Get Nice Securities Limited**. To ensure these are treated as a single continuous employer, we consolidated the records by matching the **first word** of the English company name. This heuristic allows us to accurately track professional movement between parent organizations without being misled by internal transfers between subsidiaries.
     """)
     return
 
