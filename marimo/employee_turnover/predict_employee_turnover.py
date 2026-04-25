@@ -317,7 +317,7 @@ def _(mo, sfc_licenses):
         limit 500;
         """
     )
-    return
+    return (sfc_professional_company_employment_history,)
 
 
 @app.cell(hide_code=True)
@@ -325,6 +325,96 @@ def _(mo):
     mo.md(r"""
     # Employee-employee network
     """)
+    return
+
+
+@app.cell
+def _(pd, sfc_professional_company_employment_history):
+    import matplotlib.pyplot as plt
+
+    def generate_turnover_contagion_graph(df):
+        # 1. Preprocessing
+        df = df.copy()
+        df['effectiveDate'] = pd.to_datetime(df['effectiveDate'])
+        # Handle active employees by setting a far-future date
+        df['endDate'] = pd.to_datetime(df['endDate']).fillna(pd.Timestamp('2025-12-31'))
+    
+        # 2. Create Monthly Snapshots
+        # We generate a list of all months covered in the data
+        start_date = df['effectiveDate'].min().replace(day=1)
+        end_date = df['effectiveDate'].max().replace(day=1)
+        months = pd.date_range(start_date, end_date, freq='MS')
+    
+        records = []
+    
+        # 3. Identify Peers and Departures per Month
+        for current_month in months:
+            # Who is active this month?
+            active_mask = (df['effectiveDate'] <= current_month) & (df['endDate'] > current_month)
+            active_now = df[active_mask]
+        
+            # Look back 6 months to find the "initial peer group"
+            six_months_ago = current_month - pd.DateOffset(months=6)
+            peer_group_mask = (df['effectiveDate'] <= six_months_ago) & (df['endDate'] > six_months_ago)
+            peers_six_months_ago = df[peer_group_mask]
+        
+            for company in active_now['companyId'].unique():
+                # Peers at this company 6 months ago
+                company_peers_then = peers_six_months_ago[peers_six_months_ago['companyId'] == company]['professionalId'].unique()
+                if len(company_peers_then) < 2: continue # Need at least one peer to have a percentage
+            
+                # Individuals still active at this company now
+                current_staff = active_now[active_now['companyId'] == company]['professionalId'].unique()
+            
+                for pid in current_staff:
+                    if pid not in company_peers_then: continue
+                
+                    # Exclude self from peer calculations
+                    other_peers_then = [p for p in company_peers_then if p != pid]
+                    if not other_peers_then: continue
+                
+                    # How many of those peers left in the last 6 months?
+                    peers_still_here = [p for p in other_peers_then if p in current_staff]
+                    peers_departed_pct = (1 - (len(peers_still_here) / len(other_peers_then))) * 100
+                
+                    # Did this specific person leave in the next month?
+                    # (endDate falls within the current month)
+                    next_month = current_month + pd.DateOffset(months=1)
+                    left_next_month = 1 if (current_month < df.loc[df['professionalId']==pid, 'endDate'].max() <= next_month) else 0
+                
+                    records.append({
+                        'peer_departure_pct': peers_departed_pct,
+                        'turnover_event': left_next_month
+                    })
+
+        # 4. Aggregate and Plot
+        analysis_df = pd.DataFrame(records)
+    
+        # Bin the peer departure percentages (increments of 10%)
+        analysis_df['pct_bin'] = (analysis_df['peer_departure_pct'] // 10) * 10
+    
+        # Calculate probability of turnover per bin
+        plot_data = analysis_df.groupby('pct_bin')['turnover_event'].mean() * 100
+    
+        # 5. Visualization
+        plt.figure(figsize=(10, 6))
+        plt.plot(plot_data.index, plot_data.values, marker='o', color='#d62728', linewidth=2.5)
+        plt.fill_between(plot_data.index, plot_data.values, alpha=0.1, color='#d62728')
+    
+        # Highlights from the Research
+        plt.axvline(x=30, color='gray', linestyle='--', alpha=0.6)
+        plt.text(31, plot_data.max()*0.9, '30% Critical Threshold', color='gray', fontweight='bold')
+    
+        plt.title('Impact of Peer Departures on Employee Turnover', fontsize=14, pad=20)
+        plt.xlabel('Percentage of Peers who Departed in Last 6 Months (%)', fontsize=12)
+        plt.ylabel('Probability of Individual Turnover Next Month (%)', fontsize=12)
+        plt.grid(axis='y', linestyle=':', alpha=0.7)
+        plt.xlim(0, 100)
+        plt.tight_layout()
+        plt.show()
+
+    # To use with your dataframe:
+    generate_turnover_contagion_graph(sfc_professional_company_employment_history)
     return
 
 
