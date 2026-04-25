@@ -332,9 +332,41 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Step 2: Active SFC professional Monthly Snapshot
+    ## Step 2: Generate Monthly Active SFC professional Snapshot
+
+    With the SCD Type 2 table created, we will now generate a monthly snapshot of active SFC professional.
     """)
     return
+
+
+@app.cell
+def _(pd, sfc_professional_company_employment_history):
+    def generate_monthly_active_sfc_professional_snapshot(df):
+        df = df.copy()
+        df['effectiveDate'] = pd.to_datetime(df['effectiveDate'])
+        # Fill empty end dates with a future date to represent current employees
+        df['endDate'] = pd.to_datetime(df['endDate']).fillna(pd.Timestamp('9999-01-01'))
+    
+        # 2. Create Monthly Snapshots (The "Attendance Sheet")
+        # We create a record for every person for every month they were active
+        start_date = df['effectiveDate'].min().replace(day=1)
+        end_date = df['effectiveDate'].max().replace(day=1)
+        months = pd.date_range(start_date, end_date, freq='MS')
+    
+        snapshot_list = []
+        for m in months:
+            # Everyone active in month 'm'
+            active = df[(df['effectiveDate'] <= m) & (df['endDate'] > m)].copy()
+            active['snapshot_month'] = m
+            snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
+    
+        master_history = pd.concat(snapshot_list)
+        return master_history
+
+    monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
+
+    monthly_active_sfc_professional_snapshot
+    return (monthly_active_sfc_professional_snapshot,)
 
 
 @app.cell(hide_code=True)
@@ -354,30 +386,10 @@ def _(mo):
 
 
 @app.cell
-def _(pd, sfc_professional_company_employment_history):
+def _(master_history, monthly_active_sfc_professional_snapshot, pd):
     import matplotlib.pyplot as plt
 
     def generate_contagion_analysis(df):
-        # 1. Clean and Prepare
-        df = df.copy()
-        df['effectiveDate'] = pd.to_datetime(df['effectiveDate'])
-        # Fill empty end dates with a future date to represent current employees
-        df['endDate'] = pd.to_datetime(df['endDate']).fillna(pd.Timestamp('2026-01-01'))
-    
-        # 2. Create Monthly Snapshots (The "Attendance Sheet")
-        # We create a record for every person for every month they were active
-        start_date = df['effectiveDate'].min().replace(day=1)
-        end_date = df['effectiveDate'].max().replace(day=1)
-        months = pd.date_range(start_date, end_date, freq='MS')
-    
-        snapshot_list = []
-        for m in months:
-            # Everyone active in month 'm'
-            active = df[(df['effectiveDate'] <= m) & (df['endDate'] > m)].copy()
-            active['snapshot_month'] = m
-            snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
-    
-        master_history = pd.concat(snapshot_list)
     
         # 3. Calculate Peer Groups (Who was there 6 months ago?)
         master_history['lookback_month'] = master_history['snapshot_month'] - pd.DateOffset(months=6)
@@ -437,7 +449,7 @@ def _(pd, sfc_professional_company_employment_history):
         plt.show()
 
     # Run the function
-    generate_contagion_analysis(sfc_professional_company_employment_history)
+    generate_contagion_analysis(monthly_active_sfc_professional_snapshot)
     return
 
 
