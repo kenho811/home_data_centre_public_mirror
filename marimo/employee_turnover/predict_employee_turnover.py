@@ -25,6 +25,21 @@ def _(mo):
     # Employee Turnover
 
     As explained by Network Contagion Effect, illustrated by public SFC licensed professional data.
+
+    The raw data has the below columns
+
+    - effectiveDate: Start date of the license or regulated activity.
+    - endDate: Termination or expiration date of the license or activity.
+    - fullname: Full legal name of the license holder (given and family names).
+    - sfcid: Unique ID assigned by the SFC to identify each licensee.
+    - lcRole: Licensee’s role within the SFC framework: RE: Representative authorized to carry out regulated activities under supervision; RO: Responsible Officer, authorized to supervise regulated activities.
+    - prinCeName: Official English name of the firm employing the licensee.
+    - prinCeNameChin: Official Chinese name of the firm.
+    - prinCeRef: Unique ID assigned by the SFC to each licensed firm.
+    - regulatedActivity.status: Current status of the regulated activity: R: Registered/Active; A: Archived/Inactive.
+    - regulatedActivity.actType: Numerical code for the type of regulated activity (e.g., 1: Dealing in Securities; 2: Dealing in Futures Contracts; 3: Leveraged Foreign Exchange Trading; etc.).
+    - regulatedActivity.actDesc: Description of the regulated activity in English.
+    - regulatedActivity.cactDesc: Corresponding description in Chinese.
     """)
     return
 
@@ -68,7 +83,6 @@ def _():
         return sfc_licenses
      
     raw_sfc_licenses = load_dataset()
-
     return alt, mo, pd, raw_sfc_licenses
 
 
@@ -80,6 +94,8 @@ def _(mo):
     The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
 
     For the purpose of this study, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
+
+    The same company may have different branches and thus having different prinCeRef (a)
     """)
     return
 
