@@ -363,8 +363,7 @@ def _(mo, sfc_professional_company_employment_history):
     # Reference image from research
     img = mo.image(
         src=mo.notebook_location() / "public" / "sfc_data_statistics.jpg", 
-        width="250px", 
-        rounded=True
+
     )
 
     # Final Layout
@@ -378,7 +377,9 @@ def _(mo, sfc_professional_company_employment_history):
         mo.md(
         f"""
         **Analysis of Methodology Differences:**
-        The differences between these results and the research table are primarily due to the **Corporate Group Consolidation** preprocessing. By grouping entities by the first word of their name (e.g., merging "Get Nice Securities" and "Get Nice Futures"), internal transfers within the same financial group are no longer counted as new employment records or exits. This directly leads to a significant reduction in **Employment Records** (from ~520k to {int(stats['employment_records']):,}) and a corresponding increase in **Median License Tenure**, as professional stints are now viewed as continuous across parent organizations rather than fragmented across subsidiaries.
+        The differences between these results and the research table are primarily due to the **Corporate Group Consolidation** preprocessing and the extended observation window. By grouping entities by the first word of their name (e.g., merging "Get Nice Securities" and "Get Nice Futures"), internal transfers within the same financial group are no longer counted as new employment records or exits. This leads to a significant reduction in **Employment Records** and a corresponding increase in **Median License Tenure**, as professional stints are viewed as continuous across parent organizations rather than fragmented across subsidiaries. 
+    
+        Furthermore, while the original research statistics covered the period from **2003–2024**, this updated analysis incorporates data up to **2026**, accounting for the higher count of **Total Professionals** ({int(stats['total_professionals']):,}) and capturing more recent market volatility in the turnover metrics.
         """
         )
     ])
