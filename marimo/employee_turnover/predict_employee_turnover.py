@@ -313,8 +313,7 @@ def _(mo, sfc_licenses):
             max(endDate) - min(effectiveDate) as tenure_days
         from add_group
         group by sfcid, fullName, grp
-        order by sfcid, min(effectiveDate)
-        limit 500;
+        order by sfcid, min(effectiveDate) 		
         """
     )
     return (sfc_professional_company_employment_history,)
