@@ -3,6 +3,7 @@
 #     "altair==6.1.0",
 #     "duckdb==1.5.2",
 #     "marimo",
+#     "numpy==2.4.4",
 #     "pandas==3.0.2",
 #     "pyarrow==24.0.0",
 #     "sqlglot==30.6.0",
@@ -67,40 +68,88 @@ def _(mo, sfc_licenses):
 
 @app.cell
 def _(alt, pd, sfc_licenses):
-    # 1. Deduplicate to get unique license stints per person
-    # We use the raw dates to ensure we correctly identify unique periods
+    # 1-4. (Your existing data processing)
     unique_stints = sfc_licenses.drop_duplicates(subset=['sfcid', 'effectiveDate', 'endDate']).copy()
 
-    # 2. Aggregate counts for Created licenses
     created = unique_stints.groupby('license_year_created').size().reset_index(name='count')
     created.columns = ['year', 'count']
     created['status'] = 'Created'
 
-    # 3. Aggregate counts for Terminated licenses (ignoring active licenses where endDate is null)
     terminated = unique_stints.dropna(subset=['license_year_terminated']).copy()
     terminated = terminated.groupby('license_year_terminated').size().reset_index(name='count')
     terminated.columns = ['year', 'count']
     terminated['status'] = 'Terminated'
 
-    # 4. Combine into a long-format dataframe for Altair
     plot_data = pd.concat([created, terminated])
 
-    # 5. Create the Altair Chart
-    chart = alt.Chart(plot_data).mark_line(point=True).encode(
-        x=alt.X('year:T', title='Year', axis=alt.Axis(format='%Y')),
+    # --- NEW: LOGIC TO FIND CROSSOVER POINTS ---
+    # ... (Keep your existing data processing up to pivot)
+
+    # Pivot data to compare Created vs Terminated side-by-side
+    wide_data = plot_data.pivot(index='year', columns='status', values='count').fillna(0).reset_index()
+
+    # --- NEW: CALCULATE BOUNDARIES FOR VERTICAL SLICES ---
+    # ... (Keep your existing data processing up to pivot)
+
+    # Pivot data to compare Created vs Terminated side-by-side
+    wide_data = plot_data.pivot(index='year', columns='status', values='count').fillna(0).reset_index()
+
+    # --- FIX: DATE-AWARE OFFSET ---
+    # Use pd.DateOffset to safely add 1 year to your datetime objects
+    wide_data['next_year'] = wide_data['year'] + pd.DateOffset(years=1)
+
+    # Define crossover logic
+    wide_data['diff'] = wide_data['Created'] - wide_data['Terminated']
+    wide_data['prev_diff'] = wide_data['diff'].shift(1)
+    crossovers = wide_data[wide_data['diff'] * wide_data['prev_diff'] < 0]
+
+    # --- 5. CREATE THE LAYERED CHART ---
+
+    # Base X-axis
+    base = alt.Chart(plot_data).encode(
+        x=alt.X('year:T', title='Year', axis=alt.Axis(format='%Y'))
+    )
+
+    # Shading: Full vertical slices
+    shading = alt.Chart(wide_data).transform_filter(
+        'datum.Created > datum.Terminated'
+    ).mark_rect(
+        opacity=0.15, 
+        color='#1f77b4'
+    ).encode(
+        x='year:T',
+        x2='next_year:T',
+        y=alt.value(0),   # Top of chart
+        y2=alt.value(400) # Bottom of chart (adjust if height is different)
+    )
+
+    # Line chart
+    lines = base.mark_line(point=True).encode(
         y=alt.Y('count:Q', title='Number of Licenses'),
         color=alt.Color('status:N', 
                         title='Action',
                         scale=alt.Scale(domain=['Created', 'Terminated'], 
                                         range=['#1f77b4', '#d62728'])),
         tooltip=[alt.Tooltip('year:T', format='%Y', title='Year'), 'status', 'count']
-    ).properties(
-        title='Yearly License Creation and Termination Trends',
+    )
+
+    # Crossover rules
+    rules = alt.Chart(crossovers).mark_rule(
+        color='gray',
+        strokeDash=[4, 4],
+        size=1.5
+    ).encode(
+        x='year:T',
+        tooltip=[alt.Tooltip('year:T', format='%Y', title='Intersection Year')]
+    )
+
+    # Final Layering
+    chart = (shading + lines + rules).properties(
+        title='Yearly License Trends (Growth Periods Shaded)',
         width=600,
         height=400
     ).interactive()
 
-    # If using marimo, simply return the chart object at the end of a cell
     chart
     return
 
