@@ -93,7 +93,7 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## YoY SFC Licensing creation and termination from 2003 to 2026
+    ## YoY SFC License Creation and Termination (2003–2026)
     """)
     return
 
