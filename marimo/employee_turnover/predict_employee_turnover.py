@@ -292,7 +292,7 @@ def _(mo, sfc_licenses):
                 *,
                 case when lag(split_part(prinCeName, ' ', 1)) over (partition by sfcid order by effectiveDate, endDate, prinCeName) 
                      is distinct from split_part(prinCeName, ' ', 1) 
-                     then 1 else 0 end as _incre
+                     then 1 else 0 end as _incre,
             from merged_licenses
         ),
         add_group as (
@@ -306,6 +306,7 @@ def _(mo, sfc_licenses):
             sfcid,
             fullName,
             fullName || ' (' || sfcid || ') ' as professional_id,
+        	split_part(min(prinCeName), ' ', 1) as companyName,   
             array_agg(distinct prinCeName) as princCeNames,
             min(effectiveDate) as effectiveDate,
             max(endDate) as endDate,
