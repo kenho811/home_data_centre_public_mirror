@@ -29,6 +29,29 @@ def _(mo):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Dataset
+    The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
+    ## Data Dictionary
+
+    - effectiveDate: Start date of the license or regulated activity.
+    - endDate: Termination or expiration date of the license or activity.
+    - fullname: Full legal name of the license holder (given and family names).
+    - sfcid: Unique ID assigned by the SFC to identify each licensee.
+    - lcRole: Licensee’s role within the SFC framework: RE: Representative authorized to carry out regulated activities under supervision; RO: Responsible Officer, authorized to supervise regulated activities.
+    - prinCeName: Official English name of the firm employing the licensee.
+    - prinCeNameChin: Official Chinese name of the firm.
+    - prinCeRef: Unique ID assigned by the SFC to each licensed firm.
+    - regulatedActivity.status: Current status of the regulated activity: R: Registered/Active; A: Archived/Inactive.
+    - regulatedActivity.actType: Numerical code for the type of regulated activity (e.g., 1: Dealing in Securities; 2: Dealing in Futures Contracts; 3: Leveraged Foreign Exchange Trading; etc.).
+    - regulatedActivity.actDesc: Description of the regulated activity in English.
+    - regulatedActivity.cactDesc: Corresponding description in Chinese.
+    """)
+    return
+
+
 @app.cell
 def _():
     import pandas as pd
@@ -58,112 +81,28 @@ def _():
 
         sfc_licenses["effectiveDate"] = sfc_licenses["effectiveDate"].dt.date
         sfc_licenses["endDate"] = sfc_licenses["endDate"].dt.date
-        sfc_licenses["license_year_created"] = sfc_licenses[
-            "license_year_created"
-        ].dt.date
-        sfc_licenses["license_year_terminated"] = sfc_licenses[
-            "license_year_terminated"
-        ].dt.date
 
         return sfc_licenses
-     
+
     raw_sfc_licenses = load_dataset()
 
-    mo.vstack(
-        [
-            mo.md(
-                """
-            # Dataset
-        
-            The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`. 
-        
-            - effectiveDate: Start date of the license or regulated activity.
-            - endDate: Termination or expiration date of the license or activity.
-            - fullname: Full legal name of the license holder (given and family names).
-            - sfcid: Unique ID assigned by the SFC to identify each licensee.
-            - lcRole: Licensee’s role within the SFC framework: RE: Representative authorized to carry out regulated activities under supervision; RO: Responsible Officer, authorized to supervise regulated activities.
-            - prinCeName: Official English name of the firm employing the licensee.
-            - prinCeNameChin: Official Chinese name of the firm.
-            - prinCeRef: Unique ID assigned by the SFC to each licensed firm.
-            - regulatedActivity.status: Current status of the regulated activity: R: Registered/Active; A: Archived/Inactive.
-            - regulatedActivity.actType: Numerical code for the type of regulated activity (e.g., 1: Dealing in Securities; 2: Dealing in Futures Contracts; 3: Leveraged Foreign Exchange Trading; etc.).
-            - regulatedActivity.actDesc: Description of the regulated activity in English.
-            - regulatedActivity.cactDesc: Corresponding description in Chinese.
-            """
-            ),
-            raw_sfc_licenses,
-        ]
-    )
+    raw_sfc_licenses
     return alt, mo, pd, raw_sfc_licenses
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Data Preprocessing
-
-    For the purpose of this study, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
-
-    The same company may have different branches and thus having different prinCeRef (a)
+    # Statistics: SFC Licensing creation and termination
     """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, raw_sfc_licenses):
-    sfc_licenses = mo.sql(
-        f"""
-        -- Group all consecutive rows for the same person, of the same company (determined by the first word of the company name) into the same group
-
-
-        with add_incre as (
-            select case when lag( split_part(prinCeName, ' ', 1) ) over(partition by sfcid order by id) != split_part(prinCeName, ' ', 1) then 1 else 0 end as _incre, split_part(prinCeName, ' ', 1), * from raw_sfc_licenses
-            )
-
-        select sum(_incre) over(partition by sfcid order by effectiveDate asc) as grp, 
-               id,
-               _incre,
-                fullName,
-            prinCeName,
-            prinCeRef,
-            effectiveDate,
-               * from add_incre
-            where sfcid = 'AAY115'
-        order by grp
-        """
-    )
-    return (sfc_licenses,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Dataset Characteristics
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, sfc_licenses):
-    _df = mo.sql(
-        f"""
-        select min(least(effectiveDate, endDate)) as dataset_start_date, 
-               max(greatest(effectiveDate, endDate)) as dataset_end_date, 
-               count(distinct sfcid) as total_professionals,
-               count(distinct prinCeRef) as total_firms,
-               count(*) as employment_records,
-               avg(endDate - effectiveDate)/365 as average_license_tenure_in_year
-        from sfc_licenses
-        """
-    )
     return
 
 
 @app.cell
-def _(alt, mo, pd, sfc_licenses):
+def _(alt, mo, pd, raw_sfc_licenses):
     # 1-4. (Your existing data processing)
 
-    unique_stints = sfc_licenses.drop_duplicates(
+    unique_stints = raw_sfc_licenses.drop_duplicates(
         subset=["sfcid", "effectiveDate", "endDate"]
     ).copy()
 
@@ -300,6 +239,67 @@ def _(alt, mo, pd, sfc_licenses):
             chart,
         ]
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Data Preprocessing
+
+    For the purpose of this study on Network Contagion, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
+
+    The same company may have different branches and thus having different prinCeRef. An Example is
+
+    - Get Nice Futures Company Limited
+    - Get Nice Securities Limited
+
+    To make sure a professional is considered to be working for the same company (but different branches), I use the first word in the english name for string matching.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, raw_sfc_licenses):
+    sfc_licenses = mo.sql(
+        f"""
+        -- Group all consecutive rows for the same person, of the same company (determined by the first word of the company name) into the same group
+
+
+        with add_incre as (
+            select case when lag( split_part(prinCeName, ' ', 1) ) over(partition by sfcid order by id) != split_part(prinCeName, ' ', 1) then 1 else 0 end as _incre, split_part(prinCeName, ' ', 1), * from raw_sfc_licenses
+            ), add_group as (
+
+        select 
+               sum(_incre) over(partition by sfcid order by effectiveDate asc) as grp, 
+               id,
+               _incre,
+                fullName,
+            prinCeName,
+            prinCeRef,
+            effectiveDate,
+               * from add_incre
+        )
+            select grp,
+        	       min(id) as min_id,
+            	   max(id) as max_id,
+                   sfcid,
+                   fullName,
+                   array_agg(distinct prinCeName) as princCeNames,
+                   min(effectiveDate) as effectiveDate,
+                   max(endDate) as endDate 
+            from add_group
+            where sfcid = 'AAY115'
+            group by grp, sfcid, fullName
+
+        order by sfcid, effectiveDate
+        """
+    )
+    return
+
+
+@app.cell
+def _():
     return
 
 
