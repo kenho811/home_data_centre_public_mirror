@@ -19,6 +19,16 @@ __generated_with = "0.23.3"
 app = marimo.App(width="medium")
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Employee Turnover
+
+    As explained by Network Contagion Effect, illustrated by public SFC licensed professional data
+    """)
+    return
+
+
 @app.cell
 def _():
     import pandas as pd
@@ -62,6 +72,14 @@ def _():
     sfc_licenses = load_dataset()
     sfc_licenses
     return alt, mo, pd, sfc_licenses
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Dataset Characteristics
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -224,92 +242,16 @@ def _(alt, mo, pd, sfc_licenses):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Employee-employee network
+    """)
+    return
+
+
 @app.cell
-def _(pd, sfc_licenses):
-    import networkx as nx
-    import matplotlib.pyplot as plt
-    from itertools import combinations
-
-    # 1. Prepare Temporal Data
-    # Ensure dates are datetime objects for calculation
-    sfc_licenses['effectiveDate'] = pd.to_datetime(sfc_licenses['effectiveDate'])
-    # Replace missing end dates with today's date to represent active roles
-    sfc_licenses['endDate'] = pd.to_datetime(sfc_licenses['endDate']).fillna(pd.to_datetime('today'))
-
-    # 2. Define Professionals and Career Seniority
-    # We define "career length" as the total span between their first and last records
-    professionals = sfc_licenses.groupby('sfcid').agg({
-        'fullname': 'first',
-        'effectiveDate': 'min',
-        'endDate': 'max'
-    })
-    # Calculate career length in days (used for normalization)
-    professionals['career_days'] = (professionals['endDate'] - professionals['effectiveDate']).dt.days.replace(0, 1)
-
-    # 3. Identify Co-employment Edges
-    # Group by firm (prinCeRef) to find people who worked in the same institution
-    firms = sfc_licenses.groupby('prinCeRef')
-    edge_weights = {}
-
-    for firm_id, group in firms:
-        staff_ids = group['sfcid'].unique()
-        if len(staff_ids) < 2:
-            continue
-    
-        # Iterate through all unique pairs of staff at this specific firm
-        for u, v in combinations(staff_ids, 2):
-            u_periods = group[group['sfcid'] == u][['effectiveDate', 'endDate']]
-            v_periods = group[group['sfcid'] == v][['effectiveDate', 'endDate']]
-        
-            overlap_days = 0
-            for _, u_row in u_periods.iterrows():
-                for _, v_row in v_periods.iterrows():
-                    # Find the intersection of their employment intervals
-                    start_max = max(u_row['effectiveDate'], v_row['effectiveDate'])
-                    end_min = min(u_row['endDate'], v_row['endDate'])
-                
-                    if start_max < end_min:
-                        overlap_days += (end_min - start_max).days
-        
-            if overlap_days > 0:
-                pair = tuple(sorted((u, v)))
-                edge_weights[pair] = edge_weights.get(pair, 0) + overlap_days
-
-    # 4. Construct the Network Graph
-    G = nx.Graph()
-
-    for (u, v), overlap in edge_weights.items():
-        # Normalize weight by career length to account for seniority differences
-        # Weight calculation: Overlap / Average Career Length
-        avg_career = (professionals.loc[u, 'career_days'] + professionals.loc[v, 'career_days']) / 2
-        norm_weight = overlap / avg_career
-    
-        G.add_edge(
-            professionals.loc[u, 'fullname'], 
-            professionals.loc[v, 'fullname'], 
-            weight=norm_weight
-        )
-
-    # 5. Visualise Results
-    plt.figure(figsize=(14, 10))
-
-    # The spring layout positions nodes based on connection strength
-    pos = nx.spring_layout(G, k=0.4, iterations=50)
-
-    # Draw the nodes (professionals)
-    nx.draw_networkx_nodes(G, pos, node_size=1000, node_color='lightcoral', edgecolors='black')
-
-    # Draw edges (connections) where thickness represents normalized overlap
-    weights = [G[u][v]['weight'] * 20 for u, v in G.edges()]
-    nx.draw_networkx_edges(G, pos, width=weights, alpha=0.5, edge_color='slategrey')
-
-    # Label nodes with names
-    nx.draw_networkx_labels(G, pos, font_size=10, font_weight='bold')
-
-    plt.title("Employee-Employee Co-employment Network", fontsize=16)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+def _():
     return
 
 
