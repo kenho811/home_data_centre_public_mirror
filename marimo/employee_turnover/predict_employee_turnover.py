@@ -29,18 +29,6 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Data Preprocessing
-
-    The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
-
-    For the purpose of this study, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
-    """)
-    return
-
-
 @app.cell
 def _():
     import pandas as pd
@@ -68,7 +56,6 @@ def _():
             sfc_licenses["endDate"].dt.to_period("Y").dt.to_timestamp()
         )
 
-        # 3. If you strictly need .date() objects (Python datetime.date) instead of pandas timestamps:
         sfc_licenses["effectiveDate"] = sfc_licenses["effectiveDate"].dt.date
         sfc_licenses["endDate"] = sfc_licenses["endDate"].dt.date
         sfc_licenses["license_year_created"] = sfc_licenses[
@@ -79,17 +66,45 @@ def _():
         ].dt.date
 
         return sfc_licenses
-
+     
     raw_sfc_licenses = load_dataset()
-    raw_sfc_licenses
+
     return alt, mo, pd, raw_sfc_licenses
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Data Preprocessing
+
+    The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
+
+    For the purpose of this study, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo, raw_sfc_licenses):
     sfc_licenses = mo.sql(
         f"""
-        select * from raw_sfc_licenses
+        -- Group all consecutive rows for the same person, of the same company (determined by the first word of the company name) into the same group
+
+
+        with add_incre as (
+            select case when lag( split_part(prinCeName, ' ', 1) ) over(partition by sfcid order by id) != split_part(prinCeName, ' ', 1) then 1 else 0 end as _incre, split_part(prinCeName, ' ', 1), * from raw_sfc_licenses
+            )
+
+        select sum(_incre) over(partition by sfcid order by effectiveDate asc) as grp, 
+               id,
+               _incre,
+                fullName,
+            prinCeName,
+            prinCeRef,
+            effectiveDate,
+               * from add_incre
+            where sfcid = 'AAY115'
+        order by grp
         """
     )
     return (sfc_licenses,)
@@ -268,11 +283,6 @@ def _(mo):
     mo.md(r"""
     # Employee-employee network
     """)
-    return
-
-
-@app.cell
-def _():
     return
 
 
