@@ -24,7 +24,19 @@ def _(mo):
     mo.md(r"""
     # Employee Turnover
 
-    As explained by Network Contagion Effect, illustrated by public SFC licensed professional data
+    As explained by Network Contagion Effect, illustrated by public SFC licensed professional data.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Data Preprocessing
+
+    The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
+
+    For the purpose of this study, we are not concerned with the type of reglated activity permitted by the license. We will concern ourselves with the employment duration of the SFC licensee at the specific company.
     """)
     return
 
@@ -68,10 +80,19 @@ def _():
 
         return sfc_licenses
 
+    raw_sfc_licenses = load_dataset()
+    raw_sfc_licenses
+    return alt, mo, pd, raw_sfc_licenses
 
-    sfc_licenses = load_dataset()
-    sfc_licenses
-    return alt, mo, pd, sfc_licenses
+
+@app.cell(hide_code=True)
+def _(mo, raw_sfc_licenses):
+    sfc_licenses = mo.sql(
+        f"""
+        select * from raw_sfc_licenses
+        """
+    )
+    return (sfc_licenses,)
 
 
 @app.cell(hide_code=True)
