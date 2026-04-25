@@ -16,7 +16,10 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(width="medium")
+app = marimo.App(
+    width="medium",
+    layout_file="layouts/predict_employee_turnover.slides.json",
+)
 
 
 @app.cell(hide_code=True)
@@ -248,7 +251,9 @@ def _(mo):
 
     To analyze **Network Contagion** effectively, our dataset focuses strictly on the **duration of employment** at a given firm rather than the specific regulated activities (license types) held by the individual.
 
-    A single financial group often operates through multiple legal entities or branches, such as **Get Nice Futures Company Limited** and **Get Nice Securities Limited**. To ensure these are treated as a single continuous employer, we consolidated the records by matching the **first word** of the English company name. This heuristic allows us to accurately track professional movement between parent organizations without being misled by internal transfers between subsidiaries.
+    This differs from the methodology in the research paper, as evident from the statistics summary below.
+
+    Rationale is that, a single financial group often operates through multiple legal entities or branches, such as **Get Nice Futures Company Limited** and **Get Nice Securities Limited**. To ensure these are treated as a single continuous employer, we consolidated the records by matching the **first word** of the English company name. This heuristic allows us to accurately track professional movement between parent organizations without being misled by internal transfers between subsidiaries.
 
     The result is basically an employment history of each SFC professional for each registered institution in SCD type 2 format (Slowly changing dimension Type 2). Each row shows the start date (effectiveDate) and end date (endDate) of the employment of an SFC professional at each registered institution.
     """)
