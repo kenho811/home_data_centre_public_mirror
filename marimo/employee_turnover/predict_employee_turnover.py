@@ -306,7 +306,7 @@ def _(mo, sfc_licenses):
             sfcid,
             fullName,
             fullName || ' (' || sfcid || ') ' as professional_id,
-        	split_part(min(prinCeName), ' ', 1) as companyName,   
+        	split_part(min(prinCeName), ' ', 1) as companyId,   
             array_agg(distinct prinCeName) as princCeNames,
             min(effectiveDate) as effectiveDate,
             max(endDate) as endDate,
