@@ -84,10 +84,10 @@ def _():
 
         return sfc_licenses
 
-    raw_sfc_licenses = load_dataset()
+    sfc_licenses = load_dataset()
 
-    raw_sfc_licenses
-    return alt, mo, pd, raw_sfc_licenses
+    sfc_licenses
+    return alt, mo, pd, sfc_licenses
 
 
 @app.cell(hide_code=True)
@@ -99,10 +99,10 @@ def _(mo):
 
 
 @app.cell
-def _(alt, mo, pd, raw_sfc_licenses):
+def _(alt, mo, pd, sfc_licenses):
     # 1-4. (Your existing data processing)
 
-    unique_stints = raw_sfc_licenses.drop_duplicates(
+    unique_stints = sfc_licenses.drop_duplicates(
         subset=["sfcid", "effectiveDate", "endDate"]
     ).copy()
 
@@ -260,47 +260,65 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, raw_sfc_licenses):
-    sfc_licenses = mo.sql(
+def _(mo, sfc_licenses):
+    _df = mo.sql(
         f"""
-        -- Group all consecutive rows for the same person, of the same company (determined by the first word of the company name) into the same group
-
-
-        with add_incre as (
-            select case when lag( split_part(prinCeName, ' ', 1) ) over(partition by sfcid order by id) != split_part(prinCeName, ' ', 1) then 1 else 0 end as _incre, split_part(prinCeName, ' ', 1), * from raw_sfc_licenses
-            ), add_group as (
-
+        -- Step 1: Merge overlapping date ranges for the same sfcid and prinCeName.
+        -- This collapses multiple licenses at the same company into single continuous periods.
+        with merged_licenses as (
+            select 
+                sfcid, 
+                fullName, 
+                prinCeName, 
+                min(effectiveDate) as effectiveDate, 
+                max(endDate) as endDate
+            from (
+                select 
+                    *,
+                    sum(is_new_start) over (partition by sfcid, prinCeName order by effectiveDate, endDate) as overlap_grp
+                from (
+                    select 
+                        sfcid, fullName, prinCeName, effectiveDate, endDate,
+                        case when effectiveDate <= max(endDate) over (
+                            partition by sfcid, prinCeName 
+                            order by effectiveDate, endDate 
+                            rows between unbounded preceding and 1 preceding
+                        ) then 0 else 1 end as is_new_start
+                    from sfc_licenses
+                ) t1
+            ) t2
+            group by sfcid, fullName, prinCeName, overlap_grp
+        ),
+        -- Step 2: Group consecutive records where the company's first word is the same.
+        add_incre as (
+            select 
+                *,
+                case when lag(split_part(prinCeName, ' ', 1)) over (partition by sfcid order by effectiveDate, endDate, prinCeName) 
+                     is distinct from split_part(prinCeName, ' ', 1) 
+                     then 1 else 0 end as _incre
+            from merged_licenses
+        ),
+        add_group as (
+            select 
+                *,
+                sum(_incre) over (partition by sfcid order by effectiveDate, endDate, prinCeName rows unbounded preceding) as grp
+            from add_incre
+        )
+        -- Step 3: Final aggregation
         select 
-               sum(_incre) over(partition by sfcid order by effectiveDate asc) as grp, 
-               id,
-               _incre,
-                fullName,
-            prinCeName,
-            prinCeRef,
-            effectiveDate,
-    
-               * from add_incre
-        ) 
-            -- select * from add_group
-            select grp,
-                   sfcid,
-                   fullName,
-                   array_agg(distinct prinCeName) as princCeNames,
-                   min(effectiveDate) as effectiveDate,
-                   max(endDate) as endDate 
-            from add_group
-            -- where sfcid = 'AAY115'
-            group by grp, sfcid, fullName
-
-        order by sfcid, effectiveDate
-        limit 200
+            sfcid,
+            fullName,
+            fullName || ' (' || sfcid || ') ' as professional_id,
+            array_agg(distinct prinCeName) as princCeNames,
+            min(effectiveDate) as effectiveDate,
+            max(endDate) as endDate,
+            max(endDate) - min(effectiveDate) as tenure_days
+        from add_group
+        group by sfcid, fullName, grp
+        order by sfcid, min(effectiveDate)
+        limit 500;
         """
     )
-    return
-
-
-@app.cell
-def _():
     return
 
 
