@@ -93,7 +93,7 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Statistics: SFC Licensing creation and termination
+    ## YoY SFC Licensing creation and termination from 2003 to 2026
     """)
     return
 
@@ -215,7 +215,7 @@ def _(alt, mo, pd, sfc_licenses):
     chart = (
         (shading + lines + rules)
         .properties(
-            title="Yearly License Trends (Growth Periods Shaded)",
+            title="YoY SFC License Trends (Growth Periods Shaded)",
             width=600,
             height=400,
         )
