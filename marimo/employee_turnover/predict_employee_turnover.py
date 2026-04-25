@@ -247,11 +247,13 @@ def _(mo):
     mo.md(r"""
     # Data Preprocessing
 
-    ## Data Consolidation & Employment Mapping
+    ## Step 1: Data Consolidation & Employment Mapping
 
     To analyze **Network Contagion** effectively, our dataset focuses strictly on the **duration of employment** at a given firm rather than the specific regulated activities (license types) held by the individual.
 
     A single financial group often operates through multiple legal entities or branches, such as **Get Nice Futures Company Limited** and **Get Nice Securities Limited**. To ensure these are treated as a single continuous employer, we consolidated the records by matching the **first word** of the English company name. This heuristic allows us to accurately track professional movement between parent organizations without being misled by internal transfers between subsidiaries.
+
+    The result is basically an employment history of each SFC professional for each registered institution in SCD type 2 format (Slowly changing dimension Type 2). Each row shows the start date (effectiveDate) and end date (endDate) of the employment of an SFC professional at each registered institution.
     """)
     return
 
@@ -322,7 +324,31 @@ def _(mo, sfc_licenses):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+ 
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Step 2: Active SFC professional Monthly Snapshot
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     # Employee-employee network
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Monthly Active Employee Snapshots
     """)
     return
 
