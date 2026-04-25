@@ -93,14 +93,6 @@ def _():
     return alt, mo, pd, sfc_licenses
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## YoY SFC License Creation and Termination (2003–2026)
-    """)
-    return
-
-
 @app.cell
 def _(alt, mo, pd, sfc_licenses):
     # 1-4. (Your existing data processing)
@@ -229,6 +221,7 @@ def _(alt, mo, pd, sfc_licenses):
         [
             mo.md(
                 """
+            ## YoY SFC License Creation and Termination (2003–2026)
             The temporal dynamics of license activity from 2003 to 2026 show that 
             creations (blue) generally exceed terminations (red), indicating 
             consistent net industry expansion. While the market typically trends 
@@ -349,20 +342,20 @@ def _(pd, sfc_professional_company_employment_history):
         df['effectiveDate'] = pd.to_datetime(df['effectiveDate'])
         # Fill empty end dates with a future date to represent current employees
         df['endDate'] = pd.to_datetime(df['endDate']).fillna(pd.Timestamp('9999-01-01'))
-    
+
         # 2. Create Monthly Snapshots (The "Attendance Sheet")
         # We create a record for every person for every month they were active
         start_date = df['effectiveDate'].min().replace(day=1)
         end_date = df['effectiveDate'].max().replace(day=1)
         months = pd.date_range(start_date, end_date, freq='MS')
-    
+
         snapshot_list = []
         for m in months:
             # Everyone active in month 'm'
             active = df[(df['effectiveDate'] <= m) & (df['endDate'] > m)].copy()
             active['snapshot_month'] = m
             snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
-    
+
         master_history = pd.concat(snapshot_list, ignore_index=True)
         return master_history
 
@@ -373,16 +366,61 @@ def _(pd, sfc_professional_company_employment_history):
 
 
 @app.cell(hide_code=True)
-def _(mo, monthly_active_sfc_professional_snapshot):
-    _df = mo.sql(
+def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
+    active_sfc_professional_by_month = mo.sql(
         f"""
-        select snapshot_month,
-               companyId,
-               count(*) as active_sfc_professional 
-        from monthly_active_sfc_professional_snapshot
-        group by 1 ,2
+        select
+            snapshot_month,
+            count(*) as active_sfc_professional
+        from
+            monthly_active_sfc_professional_snapshot
+        group by
+            1
         """
     )
+
+
+    # Assuming active_sfc_professional_by_month is your DataFrame
+    # Ensure the snapshot_month is in datetime format for proper temporal scaling
+    active_sfc_professional_by_month['snapshot_month'] = pd.to_datetime(active_sfc_professional_by_month['snapshot_month'])
+
+    # Create the bar chart
+    _chart = alt.Chart(active_sfc_professional_by_month).mark_bar().encode(
+        x=alt.X('snapshot_month:T', title='Snapshot Month'),
+        y=alt.Y('active_sfc_professional:Q', title='Active SFC Professionals'),
+        tooltip=[
+            alt.Tooltip('snapshot_month:T', title='Month'),
+            alt.Tooltip('active_sfc_professional:Q', title='Count')
+        ]
+    ).properties(
+        title='Active SFC Professionals by Month',
+        width=800,
+        height=400
+    ).interactive()
+
+    # To display or save the chart
+
+
+
+    mo.vstack(
+        [
+            mo.md(
+                """
+            ## Month-over-month Active SFC professionals (2003–2026)
+        
+            The bar chart of active SFC professionals reflects a resilient but evolving financial labor market between 2004 and 2026. The data aligns with the observation that the industry has seen consistent net expansion for the majority of the last two decades, characterized by the steady climb from approximately 20,000 professionals to a peak of nearly 40,000. This long-term growth supports the premise that new license creations have generally outpaced terminations over this extended period.
+        
+            However, the chart also validates the impact of external stressors on market momentum. The stagnation observed around 2009 and the more recent plateau starting in 2020 directly mirror the periods where license issuance and termination reached parity. Following the 2020 peak, the slight decline in the total count of active professionals through 2026 suggests a more sustained period of industry contraction or consolidation, where the balance has shifted toward terminations. This recent trend emphasizes how global events can transition the market from a state of steady growth into a phase of significant labor market stress and stagnation.
+            """
+            ),
+            _chart,
+        ]
+    )
+    return
+
+
+@app.cell
+def _():
     return
 
 
@@ -407,22 +445,22 @@ def _(master_history, monthly_active_sfc_professional_snapshot, pd):
     import matplotlib.pyplot as plt
 
     def generate_contagion_analysis(df):
-    
+
         # 3. Calculate Peer Groups (Who was there 6 months ago?)
         master_history['lookback_month'] = master_history['snapshot_month'] - pd.DateOffset(months=6)
-    
+
         # Self-merge to find out who was at the same company 6 months ago
         peers_then = master_history[['snapshot_month', 'companyId', 'professionalId']].copy()
-    
+
         # 4. Determine Departures
         # We count how many peers a person had 6 months ago vs how many of THOSE specific people are still here
         # This part is handled by comparing the 'master_history' against its own past state
-    
+
         # (Simplified calculation for the 23k rows to ensure speed)
         # We calculate the company-level turnover rate over 6 months as a proxy for peer influence
         company_monthly_stats = master_history.groupby(['snapshot_month', 'companyId'])['professionalId'].nunique().reset_index()
         company_monthly_stats.columns = ['month', 'companyId', 'current_count']
-    
+
         # Shift counts by 6 months to see the change
         company_monthly_stats['past_month'] = company_monthly_stats['month'] - pd.DateOffset(months=6)
         stats_merged = pd.merge(
@@ -432,17 +470,17 @@ def _(master_history, monthly_active_sfc_professional_snapshot, pd):
             right_on=['month', 'companyId'], 
             suffixes=('', '_past')
         )
-    
+
         # Peer departure % = (Peers then - Peers now) / Peers then
         stats_merged['peer_departure_pct'] = (1 - (stats_merged['current_count'] / stats_merged['current_count_past'])).clip(0, 1) * 100
-    
+
         # 5. Link individual turnover to these peer departure stats
         # Did the person leave in the month following the snapshot?
         master_history['left_next_month'] = (
             (master_history['endDate'] > master_history['snapshot_month']) & 
             (master_history['endDate'] <= (master_history['snapshot_month'] + pd.DateOffset(months=1)))
         ).astype(int)
-    
+
         final_data = pd.merge(
             master_history, 
             stats_merged[['month', 'companyId', 'peer_departure_pct']], 
