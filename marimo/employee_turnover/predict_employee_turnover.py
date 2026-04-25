@@ -16,7 +16,10 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(width="medium")
+app = marimo.App(
+    width="medium",
+    layout_file="layouts/predict_employee_turnover.slides.json",
+)
 
 
 @app.cell(hide_code=True)
@@ -315,7 +318,7 @@ def _(mo, sfc_licenses):
             max(endDate) - min(effectiveDate) as tenure_days
         from add_group
         group by sfcid, fullName, grp
-        order by sfcid, min(effectiveDate) 		
+        order by sfcid, min(effectiveDate)
         """
     )
     return (sfc_professional_company_employment_history,)
@@ -360,7 +363,7 @@ def _(pd, sfc_professional_company_employment_history):
             active['snapshot_month'] = m
             snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
     
-        master_history = pd.concat(snapshot_list)
+        master_history = pd.concat(snapshot_list, ignore_index=True)
         return master_history
 
     monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
@@ -369,31 +372,17 @@ def _(pd, sfc_professional_company_employment_history):
     return (monthly_active_sfc_professional_snapshot,)
 
 
-@app.cell
-def _(alt):
-    # replace _df with your data source
-    _chart = (
-        alt.Chart(_df)
-        .mark_bar()
-        .encode(
-            x=alt.X(aggregate='count', type='quantitative'),
-            y=alt.Y(field='snapshot_month', type='temporal', timeUnit='yearmonthdate'),
-            tooltip=[
-                alt.Tooltip(field='snapshot_month', timeUnit='yearmonthdate', title='snapshot_month'),
-                alt.Tooltip(aggregate='count')
-            ]
-        )
-        .properties(
-            height=290,
-            width='container',
-            config={
-                'axis': {
-                    'grid': False
-                }
-            }
-        )
+@app.cell(hide_code=True)
+def _(mo, monthly_active_sfc_professional_snapshot):
+    _df = mo.sql(
+        f"""
+        select snapshot_month,
+               companyId,
+               count(*) as active_sfc_professional 
+        from monthly_active_sfc_professional_snapshot
+        group by 1 ,2
+        """
     )
-    _chart
     return
 
 
