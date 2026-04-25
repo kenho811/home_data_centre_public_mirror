@@ -258,7 +258,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, sfc_licenses):
-    _df = mo.sql(
+    sfc_professional_company_employment_history = mo.sql(
         f"""
         -- Step 1: Merge overlapping date ranges for the same sfcid and prinCeName.
         -- This collapses multiple licenses at the same company into single continuous periods.
@@ -305,7 +305,7 @@ def _(mo, sfc_licenses):
         select 
             sfcid,
             fullName,
-            fullName || ' (' || sfcid || ') ' as professional_id,
+            fullName || ' (' || sfcid || ') ' as professionalId,
         	split_part(min(prinCeName), ' ', 1) as companyId,   
             array_agg(distinct prinCeName) as princCeNames,
             min(effectiveDate) as effectiveDate,
