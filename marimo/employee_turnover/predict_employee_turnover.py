@@ -369,6 +369,34 @@ def _(pd, sfc_professional_company_employment_history):
     return (monthly_active_sfc_professional_snapshot,)
 
 
+@app.cell
+def _(alt):
+    # replace _df with your data source
+    _chart = (
+        alt.Chart(_df)
+        .mark_bar()
+        .encode(
+            x=alt.X(aggregate='count', type='quantitative'),
+            y=alt.Y(field='snapshot_month', type='temporal', timeUnit='yearmonthdate'),
+            tooltip=[
+                alt.Tooltip(field='snapshot_month', timeUnit='yearmonthdate', title='snapshot_month'),
+                alt.Tooltip(aggregate='count')
+            ]
+        )
+        .properties(
+            height=290,
+            width='container',
+            config={
+                'axis': {
+                    'grid': False
+                }
+            }
+        )
+    )
+    _chart
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
