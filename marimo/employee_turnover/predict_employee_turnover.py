@@ -278,21 +278,22 @@ def _(mo, raw_sfc_licenses):
             prinCeName,
             prinCeRef,
             effectiveDate,
+    
                * from add_incre
-        )
+        ) 
+            -- select * from add_group
             select grp,
-        	       min(id) as min_id,
-            	   max(id) as max_id,
                    sfcid,
                    fullName,
                    array_agg(distinct prinCeName) as princCeNames,
                    min(effectiveDate) as effectiveDate,
                    max(endDate) as endDate 
             from add_group
-            where sfcid = 'AAY115'
+            -- where sfcid = 'AAY115'
             group by grp, sfcid, fullName
 
         order by sfcid, effectiveDate
+        limit 200
         """
     )
     return
