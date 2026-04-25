@@ -16,18 +16,14 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(
-    width="medium",
-    layout_file="layouts/predict_employee_turnover.slides.json",
-)
+app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Employee Turnover
-
-    ### As explained by Network Contagion Effect and illustrated with public HK SFC licensed professional data from 2003 to 2026
+    # Network Contagion in Financial Labor Markets
+    ### Predicting Employee Turnover via the Hong Kong SFC Public Register (2003–2026)
     """)
     return
 
@@ -320,6 +316,73 @@ def _(mo, sfc_licenses):
         """
     )
     return (sfc_professional_company_employment_history,)
+
+
+@app.cell(hide_code=True)
+def _(mo, sfc_professional_company_employment_history):
+    _df = mo.sql(
+        f"""
+        SELECT 
+            -- 1. Total Professionals
+            COUNT(DISTINCT sfcid) AS total_professionals,
+    
+            -- 2. Total Firms
+            COUNT(DISTINCT companyId) AS total_firms,
+    
+            -- 3. Employment Records
+            COUNT(*) AS employment_records,
+    
+            -- 4. Median license tenure (converted from days to years)
+            ROUND(MEDIAN(tenure_days) / 365.25, 1) AS median_license_tenure_years,
+    
+            -- 5. Monthly turnover rate
+            ROUND(
+                (COUNT(endDate) * 100.0) / (SUM(tenure_days) / 30.44), 
+                1
+            ) AS monthly_turnover_rate_pct,
+    
+            -- 6. Median number of employees per firm
+            (SELECT MEDIAN(emp_count) 
+             FROM (
+                 SELECT companyId, COUNT(DISTINCT sfcid) AS emp_count 
+                 FROM sfc_professional_company_employment_history 
+                 GROUP BY companyId
+             ) AS firm_stats
+            ) AS median_employees_per_firm
+
+        FROM sfc_professional_company_employment_history;
+        """
+    )
+
+    # Extract values for the display
+    stats = _df.iloc[0]
+    stats_table = mo.ui.table(
+        _df
+    )
+
+    # Reference image from research
+    img = mo.image(
+        src=mo.notebook_location() / "public" / "sfc_data_statistics.jpg", 
+        width="250px", 
+        rounded=True
+    )
+
+    # Final Layout
+    mo.vstack([
+        mo.md(
+        f"""
+        ## Statistcs Comparison
+        """),
+        img,
+        stats_table,
+        mo.md(
+        f"""
+        **Analysis of Methodology Differences:**
+        The differences between these results and the research table are primarily due to the **Corporate Group Consolidation** preprocessing. By grouping entities by the first word of their name (e.g., merging "Get Nice Securities" and "Get Nice Futures"), internal transfers within the same financial group are no longer counted as new employment records or exits. This directly leads to a significant reduction in **Employment Records** (from ~520k to {int(stats['employment_records']):,}) and a corresponding increase in **Median License Tenure**, as professional stints are now viewed as continuous across parent organizations rather than fragmented across subsidiaries.
+        """
+        )
+    ])
+    return
 
 
 @app.cell(hide_code=True)
