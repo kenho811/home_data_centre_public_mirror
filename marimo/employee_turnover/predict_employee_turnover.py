@@ -67,11 +67,8 @@ def _(mo, sfc_licenses):
 
 
 @app.cell
-def _(alt, pd, sfc_licenses):
+def _(alt, created, mo, pd, unique_stints):
     # 1-4. (Your existing data processing)
-    unique_stints = sfc_licenses.drop_duplicates(subset=['sfcid', 'effectiveDate', 'endDate']).copy()
-
-    created = unique_stints.groupby('license_year_created').size().reset_index(name='count')
     created.columns = ['year', 'count']
     created['status'] = 'Created'
 
@@ -150,7 +147,28 @@ def _(alt, pd, sfc_licenses):
         height=400
     ).interactive()
 
-    chart
+    mo.vstack([
+        mo.md(
+            """
+            The temporal dynamics of license activity from 2003 to 2026 show that 
+            creations (blue) generally exceed terminations (red), indicating 
+            consistent net industry expansion. While the market typically trends 
+            upward, significant global events like the 2009 Global Financial Crisis 
+            and the 2020 COVID-19 pandemic caused issuance and termination to reach 
+            parity. This convergence highlights periods of stagnation and stress 
+            in the financial labor market, where new growth was offset by 
+            license cancellations.
+            """
+        ),
+        chart
+    ])
+
+
+    return
+
+
+@app.cell
+def _():
     return
 
 
