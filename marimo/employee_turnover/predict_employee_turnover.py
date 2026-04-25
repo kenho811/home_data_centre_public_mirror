@@ -35,22 +35,27 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Dataset
-    The data is obtained here: https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register. It shows the start and end date of each SFC licensee professional and the employer he/she is working for. Each row is granular to the level of `regulated Activity`.
-    ## Data Dictionary
+    ### Researching Network Contagion: The SFC Public Register Dataset
 
-    - effectiveDate: Start date of the license or regulated activity.
-    - endDate: Termination or expiration date of the license or activity.
-    - fullname: Full legal name of the license holder (given and family names).
-    - sfcid: Unique ID assigned by the SFC to identify each licensee.
-    - lcRole: Licensee’s role within the SFC framework: RE: Representative authorized to carry out regulated activities under supervision; RO: Responsible Officer, authorized to supervise regulated activities.
-    - prinCeName: Official English name of the firm employing the licensee.
-    - prinCeNameChin: Official Chinese name of the firm.
-    - prinCeRef: Unique ID assigned by the SFC to each licensed firm.
-    - regulatedActivity.status: Current status of the regulated activity: R: Registered/Active; A: Archived/Inactive.
-    - regulatedActivity.actType: Numerical code for the type of regulated activity (e.g., 1: Dealing in Securities; 2: Dealing in Futures Contracts; 3: Leveraged Foreign Exchange Trading; etc.).
-    - regulatedActivity.actDesc: Description of the regulated activity in English.
-    - regulatedActivity.cactDesc: Corresponding description in Chinese.
+    This dataset is an empirical foundation for analyzing employee turnover and professional network effects within one of the world's premier financial hubs. It originates from the public register maintained by the **Hong Kong Securities and Futures Commission (SFC)**, which has systematically recorded licensed individuals, corporations, and registered institutions since the implementation of the **Securities and Futures Ordinance (SFO)** on 1 April 2003.
+
+    #### **Research Utility**
+    This data is primarily utilized to explore **network contagion**—how the movement of peers within a professional network influences individual turnover.
+
+
+    ---
+
+    ### 📖 Data Dictionary
+
+    * **`fullname`**: Full legal name of the license holder.
+    * **`sfcid`**: A unique, permanent identifier assigned by the SFC to each licensee.
+    * **`lcRole`**: Licensee’s role (e.g., **RE**: Representative; **RO**: Responsible Officer authorized to supervise activities).
+    * **`prinCeName` / `prinCeNameChin`**: Official English and Chinese names of the employing firm.
+    * **`prinCeRef`**: Unique central entity ID assigned by the SFC to each licensed firm.
+    * **`regulatedActivity.actType` & `actDesc`**: Numerical codes and descriptions for the types of regulated activities authorized (e.g., Type 1: Dealing in Securities; Type 9: Asset Management).
+    * **`regulatedActivity.status`**: Current status of the activity (**R**: Registered/Active; **A**: Archived/Inactive).
+    * **`effectiveDate`**: Start date of the specific license or regulated activity.
+    * **`endDate`**: Termination or expiration date of the license or affiliation.
     """)
     return
 
@@ -416,11 +421,6 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
             _chart,
         ]
     )
-    return
-
-
-@app.cell
-def _():
     return
 
 
