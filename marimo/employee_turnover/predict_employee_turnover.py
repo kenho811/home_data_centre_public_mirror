@@ -356,8 +356,8 @@ def _(pd, sfc_professional_company_employment_history):
             active['snapshot_month'] = m
             snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
 
-        master_history = pd.concat(snapshot_list, ignore_index=True)
-        return master_history
+        monthly_active_sfc_professionals = pd.concat(snapshot_list, ignore_index=True)
+        return monthly_active_sfc_professionals
 
     monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
 
@@ -441,24 +441,24 @@ def _(mo):
 
 
 @app.cell
-def _(master_history, monthly_active_sfc_professional_snapshot, pd):
+def _(monthly_active_sfc_professional_snapshot, pd):
     import matplotlib.pyplot as plt
 
-    def generate_contagion_analysis(df):
+    def generate_contagion_analysis(monthly_active_sfc_professionals):
 
         # 3. Calculate Peer Groups (Who was there 6 months ago?)
-        master_history['lookback_month'] = master_history['snapshot_month'] - pd.DateOffset(months=6)
+        monthly_active_sfc_professionals['lookback_month'] = monthly_active_sfc_professionals['snapshot_month'] - pd.DateOffset(months=6)
 
         # Self-merge to find out who was at the same company 6 months ago
-        peers_then = master_history[['snapshot_month', 'companyId', 'professionalId']].copy()
+        peers_then = monthly_active_sfc_professionals[['snapshot_month', 'companyId', 'professionalId']].copy()
 
         # 4. Determine Departures
         # We count how many peers a person had 6 months ago vs how many of THOSE specific people are still here
-        # This part is handled by comparing the 'master_history' against its own past state
+        # This part is handled by comparing the 'monthly_active_sfc_professionals' against its own past state
 
         # (Simplified calculation for the 23k rows to ensure speed)
         # We calculate the company-level turnover rate over 6 months as a proxy for peer influence
-        company_monthly_stats = master_history.groupby(['snapshot_month', 'companyId'])['professionalId'].nunique().reset_index()
+        company_monthly_stats = monthly_active_sfc_professionals.groupby(['snapshot_month', 'companyId'])['professionalId'].nunique().reset_index()
         company_monthly_stats.columns = ['month', 'companyId', 'current_count']
 
         # Shift counts by 6 months to see the change
@@ -476,13 +476,13 @@ def _(master_history, monthly_active_sfc_professional_snapshot, pd):
 
         # 5. Link individual turnover to these peer departure stats
         # Did the person leave in the month following the snapshot?
-        master_history['left_next_month'] = (
-            (master_history['endDate'] > master_history['snapshot_month']) & 
-            (master_history['endDate'] <= (master_history['snapshot_month'] + pd.DateOffset(months=1)))
+        monthly_active_sfc_professionals['left_next_month'] = (
+            (monthly_active_sfc_professionals['endDate'] > monthly_active_sfc_professionals['snapshot_month']) & 
+            (monthly_active_sfc_professionals['endDate'] <= (monthly_active_sfc_professionals['snapshot_month'] + pd.DateOffset(months=1)))
         ).astype(int)
 
         final_data = pd.merge(
-            master_history, 
+            monthly_active_sfc_professionals, 
             stats_merged[['month', 'companyId', 'peer_departure_pct']], 
             left_on=['snapshot_month', 'companyId'], 
             right_on=['month', 'companyId']
