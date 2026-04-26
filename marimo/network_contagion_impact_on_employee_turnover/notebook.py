@@ -710,7 +710,7 @@ def _(mo):
     lookback_selection = mo.ui.multiselect(
         options=[str(i) for i in range(1, 25)],
         label="Select Lookback Windows (Months):",
-        value=["3"],  # Default selection
+        value=[3],  # Default selection
     )
 
 
@@ -941,6 +941,8 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         .configure_view(stroke=None)
         .resolve_axis(x='independent') 
     )
+
+    _chart.save('correlation_of_historical_departure_on_employees_next_month_departure.json')
 
     mo.vstack(
         [
