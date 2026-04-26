@@ -61,13 +61,12 @@ def _(mo):
             ## Introduction: Employee-employee Network
 
             The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
-          
+
             """
             ),
             _img,
         ]
     )
-
 
     return
 
@@ -86,26 +85,25 @@ def _(mo):
         To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
         ## The process
-    
+
         This notebook guides you through the end-to-end analytical workflow:
 
         1.  **Data Preprocessing**: Cleaning and structuring the raw SFC licenses registry data into monthly active SFC professionals snapshots from 2003 to 2026.
-    
+
         2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
-    
+
         3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
 
         ## The result
 
         At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
-        
-        
+
+
             """
             ),
             _img,
         ]
     )
-
 
     return
 
@@ -628,14 +626,13 @@ def _(mo):
         [
             mo.md(
         """
-    # Playground: Adjust Lookback Windows on Staff Departure in the Same Company
+    # Result: Correlation Peer Attribution and Individual Turnover in Following Month
 
             """
             ),
             lookback_selection,
         ]
     )
-
 
     return (lookback_selection,)
 
@@ -826,9 +823,6 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         [
             mo.md(
             """
-    # Correlation Peer Attribution and Individual Turnover in Following Month
-
-
     The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
     * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
