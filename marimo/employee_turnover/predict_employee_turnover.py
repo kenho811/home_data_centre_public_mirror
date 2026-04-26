@@ -20,7 +20,10 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(width="medium")
+app = marimo.App(
+    width="medium",
+    layout_file="layouts/predict_employee_turnover.slides.json",
+)
 
 
 @app.cell(hide_code=True)
@@ -39,7 +42,7 @@ def _(mo):
 
     ### Predicting Employee Turnover via the Hong Kong SFC Public Register (2003–2026)
 
-    This notebook serves as a practical exploration of these concepts. While the original research dives deep into predictive modeling, this environment focuses on illustrating the underlying correlations using over two decades of public regulatory data.
+    This notebook serves as a practical exploration of these concepts. While the original research dives deep into predictive modeling, this notebook focuses on illustrating the underlying correlations using over two decades of public regulatory data (2003 - 2026).
 
     ### The Data
     We utilize the public dataset available on Kaggle: [Hong Kong SFC Register (2003–2026)](https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register). This rich dataset tracks the movement of SFC professionals (licencees) across registered institutions in Hong Kong, providing a unique lens into labor market dynamics.
@@ -61,9 +64,6 @@ def _(mo):
             ## Introduction: Employee-employee Network
 
             The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
-
-            This notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
-
           
             """
             ),
@@ -86,6 +86,7 @@ def _(mo):
         [
             mo.md(
             """
+        To provide a more intuitive understanding of the impact, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
         ## The process
     
