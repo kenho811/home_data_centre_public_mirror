@@ -513,11 +513,15 @@ def _(mo):
 @app.cell
 def _(mo):
     # Define the range slider
+
+    default_min_year = 2015
+    default_max_year = 2020
+
     year_slider_for_snapshot = mo.ui.range_slider(
         start=2003,
         stop=2026,
         step=1,
-        value=[2015, 2020],
+        value=[default_min_year, default_max_year],
         label="Year Range For Monthly Snapshot",
     )
 
@@ -528,10 +532,10 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-                """
+                f"""
     ## Set range for Monthly Snapshot
 
-    - To prevent memory overflow, the default range is set to 2015 to 2020
+    - To prevent memory overflow, the default range is set to {default_min_year} to {default_max_year}
 
 
             """
