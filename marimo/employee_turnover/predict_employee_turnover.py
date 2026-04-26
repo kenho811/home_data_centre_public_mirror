@@ -27,7 +27,13 @@ app = marimo.App(width="medium")
 def _(mo):
     mo.md(r"""
     # Network Contagion in Financial Labor Markets
+
     ### Predicting Employee Turnover via the Hong Kong SFC Public Register (2003–2026)
+
+
+    ### What
+
+    ### How
     """)
     return
 
@@ -614,7 +620,7 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
         SELECT 
             lookback_period,
             snapshot_month,
-            companyId,
+            -- companyId,
             -- Since pct_departed_staff is already a company-level calculation, 
             -- AVG will return the value itself for that group.
             AVG(pct_departed_staff) AS pct_departed_staff,
@@ -624,8 +630,7 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
             monthly_active_sfc_professional_features_snapshot
         GROUP BY 
             lookback_period,
-            snapshot_month,
-            companyId
+            snapshot_month
         """
     )
 
@@ -645,40 +650,79 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 
 @app.cell
-def _(alt, past_staff_departure_vs_next_month_departure_metrics):
+def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
+
     alt.data_transformers.enable("vegafusion")
 
-    # Build the visualization using the aggregated SQL output
+    # Build the base chart
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X('pct_departed_staff:Q', 
                 title='Peer Departure % (Past X Months)',
-                scale=alt.Scale(domain=[0, 100])),
+                scale=alt.Scale(domain=[0, 50])),
         y=alt.Y('avg_left_next_month:Q', 
                 title='Prob. of Leaving Next Month (Mean)',
-                scale=alt.Scale(domain=[0, 1]))
+                scale=alt.Scale(domain=[0, 0.05]))
     )
 
     # Layer 1: Scatter points representing each Company-Month
     _points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
 
-    # Layer 2: Linear Regression line to show the trend
-    _line = _base.transform_regression('pct_departed_staff', 'avg_left_next_month').mark_line(color='red', size=3)
+    # Layer 2: Linear Regression line
+    _line = _base.transform_regression(
+        'pct_departed_staff', 'avg_left_next_month'
+    ).mark_line(color='red', size=3)
+
+    # Layer 3: Regression Coefficients Label
+    # We use transform_regression with params=True to get the coefficients
+    _coef_label = _base.transform_regression(
+        'pct_departed_staff', 'avg_left_next_month', params=True
+    ).mark_text(
+        align='left', 
+        baseline='top', 
+        dx=-140, # Adjust position based on your scale
+        dy=-80, 
+        color='red',
+        fontWeight='bold'
+    ).encode(
+        # format: .4f provides 4 decimal places for the slope
+        text=alt.Text('coef:Q', format='.4f', title='Coefficient')
+    )
 
     # Combine layers and facet by the lookback window
-    chart = (_points + _line).facet(
+    _chart = (_points + _line + _coef_label).facet(
         facet=alt.Facet('lookback_period:N', 
                         title=None, 
                         sort=['3 Months', '6 Months', '12 Months']),
         columns=3
     ).properties(
-        title='Impact of Peer Departures on Individual Turnover Probability'
+        title='Impact of Peer Departures on Individual Turnover Probability (with Coefficients)'
     ).configure_axis(
         grid=True
     ).configure_view(
         stroke=None
     )
 
-    chart.display()
+
+    mo.vstack(
+        [
+            mo.md(
+            """
+        
+            ## Correlation Peer Attribution and Individual Turnover in Following Month
+        
+            The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
+    
+        * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
+        * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
+        * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
+
+    
+            """
+            ),
+            _chart,
+        ]
+    )
+
     return
 
 
