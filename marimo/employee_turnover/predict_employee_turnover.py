@@ -43,9 +43,6 @@ def _(mo):
     ### Predicting Employee Turnover via the Hong Kong SFC Public Register (2003–2026)
 
     This notebook serves as a practical exploration of these concepts. While the original research dives deep into predictive modeling, this notebook focuses on illustrating the underlying correlations using over two decades of public regulatory data (2003 - 2026).
-
-    ### The Data
-    We utilize the public dataset available on Kaggle: [Hong Kong SFC Register (2003–2026)](https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register). This rich dataset tracks the movement of SFC professionals (licencees) across registered institutions in Hong Kong, providing a unique lens into labor market dynamics.
     """)
     return
 
@@ -116,17 +113,17 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Dataset: The SFC Public Register Dataset
+    # Data
+    We utilize the public dataset available on Kaggle: [Hong Kong SFC Register (2003–2026)](https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register).
 
-    This dataset is an empirical foundation for analyzing employee turnover and professional network effects within one of the world's premier financial hubs. It originates from the public register maintained by the **Hong Kong Securities and Futures Commission (SFC)**, which has systematically recorded licensed individuals, corporations, and registered institutions since the implementation of the **Securities and Futures Ordinance (SFO)** on 1 April 2003.
+    It originates from the public register maintained by the **Hong Kong Securities and Futures Commission (SFC)**, which has systematically recorded licensed individuals, corporations, and registered institutions since the implementation of the **Securities and Futures Ordinance (SFO)** on 1 April 2003. It provides us with a unique lens into labor market dynamics.
 
-    #### **Research Utility**
-    This data is primarily utilized to explore **network contagion**—how the movement of peers within a professional network influences individual turnover.
+    With this, we will explore **network contagion**—how the movement of peers within a professional network influences individual turnover.
 
 
     ---
 
-    ### 📖 Data Dictionary
+    ## 📖 Data Dictionary
 
     * **`fullname`**: Full legal name of the license holder.
     * **`sfcid`**: A unique, permanent identifier assigned by the SFC to each licensee.
@@ -307,15 +304,16 @@ def _(alt, mo, pd, sfc_licenses):
         [
             mo.md(
                 """
-            ## YoY SFC License Creation and Termination (2003–2026)
-            The temporal dynamics of license activity from 2003 to 2026 show that 
-            creations (blue) generally exceed terminations (red), indicating 
-            consistent net industry expansion. While the market typically trends 
-            upward, significant global events like the 2009 Global Financial Crisis 
-            and the 2020 COVID-19 pandemic caused issuance and termination to reach 
-            parity. This convergence highlights periods of stagnation and stress 
-            in the financial labor market, where new growth was offset by 
-            license cancellations.
+    ## Bird Eye view of SFC Licensing: YoY SFC License Creation and Termination (2003–2026)
+
+    The temporal dynamics of license activity from 2003 to 2026 show that 
+    creations (blue) generally exceed terminations (red), indicating 
+    consistent net industry expansion. While the market typically trends 
+    upward, significant global events like the 2009 Global Financial Crisis 
+    and the 2020 COVID-19 pandemic caused issuance and termination to reach 
+    parity. This convergence highlights periods of stagnation and stress 
+    in the financial labor market, where new growth was offset by 
+    license cancellations.
             """
             ),
             _chart,
@@ -485,7 +483,7 @@ def _(mo):
     | Feature | SCD Type 2 (Source) | Monthly Snapshot (Target) |
     | :--- | :--- | :--- |
     | **Row Meaning** | A version of a record. | The state of a record for each month. |
-    | **Granularity** | Event-_based (new row on change). | Time-_based (new row every month). |
+    | **Granularity** | Event-based (new row on change). | Time-based (new row every month). |
     | **Storage** | Efficient (only stores changes). | Heavy (duplicates data for every month). |
     | **Querying** | Harder (requires range logic). | Easiest (filter by a single month). |
     """)
@@ -827,14 +825,15 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     mo.vstack(
         [
             mo.md(
-        """
-            ## Correlation Peer Attribution and Individual Turnover in Following Month
+            """
+    # Correlation Peer Attribution and Individual Turnover in Following Month
 
-            The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
-        * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
-        * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
-        * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
+    The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
+
+    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
+    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
+    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
 
 
             """
