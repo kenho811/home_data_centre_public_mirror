@@ -58,9 +58,9 @@ def _(mo):
         [
             mo.md(
                 """
-            ## Introduction: Employee-employee Network
+    ## Introduction: Employee-employee Network
 
-            The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
+    The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
 
             """
             ),
@@ -71,35 +71,40 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
-    _img = mo.image(
-        src=mo.notebook_location()
-        / "public"
-        / "the_Impact_of_historical_departures_on_imminent_turnover_risk.svg",
+def _(alt, mo):
+    # Assuming 'json_data' is your JSON string
+
+    with open(mo.notebook_location() / "public" / "correlation_of_historical_departure_on_employees_next_month_departure.json", "r") as f:
+        _chart_jsonspec = f.read()
+
+    _correlation_chart = alt.Chart.from_json(
+        _chart_jsonspec
     )
+    _correlation_chart = mo.ui.altair_chart(_correlation_chart)
+
 
 
     mo.vstack(
         [
             mo.md(
                 """
-        To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
+    To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
-        ## The process
+    ## The process
 
-        This notebook guides you through the end-to-end analytical workflow:
+    This notebook guides you through the end-to-end analytical workflow:
 
-        1.  **Data Preprocessing**: Cleaning and structuring the raw SFC licenses registry data into monthly active SFC professionals snapshots from 2003 to 2026.
+    1.  **Data Preprocessing**: Cleaning and structuring the raw SFC licenses registry data into monthly active SFC professionals snapshots from 2003 to 2026.
 
-        2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
+    2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
 
-        3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
+    3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
 
-        ## The result
+    ## The result
 
-        At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
+    At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
 
-        The visualization demonstrates a **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
+    The visualization demonstrates a **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
     * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
 
@@ -110,7 +115,7 @@ def _(mo):
 
             """
             ),
-            _img,
+            _correlation_chart,
         ]
     )
     return
@@ -887,7 +892,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         x=alt.X(
             "pct_departed_staff:Q",
             title="Peer Departure % (Past X Months)",
-            scale=alt.Scale(domain=[0, 30]),  # Explicitly defined scale
+            scale=alt.Scale(domain=[0, 30]),
         ),
         y=alt.Y(
             "avg_left_next_month:Q",
@@ -896,8 +901,14 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         ),
     )
 
-    # Layer 1: Scatter points representing each Company-Month
-    _points = _base.mark_point(opacity=0.4, size=25, color="steelblue")
+    # Layer 1: Scatter points with TOOLTIPS added here
+    _points = _base.mark_point(opacity=0.4, size=25, color="steelblue").encode(
+        tooltip=[
+            alt.Tooltip("lookback_period:N", title="Window"),
+            alt.Tooltip("pct_departed_staff:Q", title="Peer Departure %", format=".2f"),
+            alt.Tooltip("avg_left_next_month:Q", title="Avg Prob. of Leaving", format=".4f")
+        ]
+    )
 
     # Layer 2: Linear Regression line
     _line = _base.transform_regression(
@@ -912,7 +923,6 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
             facet=alt.Facet(
                 "lookback_period:N",
                 title=None,
-                # Force the specific order: 3 -> 6 -> 12
                 sort=["3 Months", "6 Months", "12 Months"],
             ),
             columns=3,
@@ -922,11 +932,8 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         )
         .configure_axis(grid=True)
         .configure_view(stroke=None)
-        # resolve_axis ensures the scale/labels appear on every facet
         .resolve_axis(x='independent') 
     )
-
-    _chart.save('chart_test.json')
 
     mo.vstack(
         [
@@ -934,9 +941,9 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
                 """
     The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
-    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
-    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
-    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
+    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward.
+    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk.
+    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals.
                 """
             ),
             _chart,
