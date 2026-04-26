@@ -162,13 +162,13 @@ def _(alt, mo, pd, sfc_licenses):
     # --- 5. CREATE THE LAYERED _chart ---
 
     # _base X-axis
-    _base = alt._chart(plot_data).encode(
+    _base = alt.Chart(plot_data).encode(
         x=alt.X("year:T", title="Year", axis=alt.Axis(format="%Y"))
     )
 
     # Shading: Full vertical slices
     shading = (
-        alt._chart(wide_data)
+        alt.Chart(wide_data)
         .transform_filter("datum.Created > datum.Terminated")
         .mark_rect(opacity=0.15, color="#1f77b4")
         .encode(
@@ -198,7 +198,7 @@ def _(alt, mo, pd, sfc_licenses):
 
     # Crossover rules
     rules = (
-        alt._chart(crossovers)
+        alt.Chart(crossovers)
         .mark_rule(color="gray", strokeDash=[4, 4], size=1.5)
         .encode(
             x="year:T",
@@ -468,7 +468,7 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
     active_sfc_professional_by_month['snapshot_month'] = pd.to_datetime(active_sfc_professional_by_month['snapshot_month'])
 
     # Create the bar _chart
-    _chart = alt._chart(active_sfc_professional_by_month).mark_bar().encode(
+    _chart = alt.Chart(active_sfc_professional_by_month).mark_bar().encode(
         x=alt.X('snapshot_month:T', title='Snapshot Month'),
         y=alt.Y('active_sfc_professional:Q', title='Active SFC Professionals'),
         tooltip=[
@@ -622,7 +622,7 @@ def _(alt, monthly_active_sfc_professional_features_snapshot):
     }).reset_index()
 
     # 2. Define the _base _chart encoding
-    _base = alt._chart(agg_data).encode(
+    _base = alt.Chart(agg_data).encode(
         x=alt.X('pct_departed_staff:Q', 
                 title='Peer Departure % (Past X Months)',
                 scale=alt.Scale(domain=[0, 100])),
