@@ -96,11 +96,7 @@ def _(alt, mo):
         _chart_jsonspec = f.read()
     _correlation_chart = alt.Chart.from_json(_chart_jsonspec)
     correlation_chart = mo.ui.altair_chart(_correlation_chart)
-    return (correlation_chart,)
 
-
-@app.cell
-def _(correlation_chart, mo):
     mo.vstack(
         [
             mo.md(
@@ -111,11 +107,25 @@ def _(correlation_chart, mo):
 
     The visualization demonstrates a **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
-    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
+    ### **1\. Consistent Positive Correlation**
 
-    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
+    Across all three time horizons (3, 6, and 12 months), there is a **clear positive relationship** between peer departures and individual turnover probability. As the percentage of departing peers increases, the likelihood of a remaining employee leaving also rises, as indicated by the upward-sloping red regression lines.
 
-    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
+    ### **2\. Diminishing Sensitivity Over Time**
+
+    The impact of peer departures appears most **acute in the short term**.
+
+    -   **3-Month Window:** Shows the steepest slope, suggesting that even a small increase in peer departures (from 4% to 8%) triggers a relatively sharp rise in individual turnover risk.
+
+    -   **12-Month Window:** Shows the flattest slope. While the total percentage of peer departures is higher over a year, the "shock" to individual turnover probability is more gradual and less sensitive compared to the 3-month bursts.
+
+    ### **3\. Turnover Probability Baseline**
+
+    Despite the varying rates of peer departures across the three windows, the **individual turnover probability remains concentrated between 1.5% and 2.5%**.
+
+    -   Even at the lowest observed peer departure rates (approx. 4% in the 3-month view), the baseline turnover probability rarely drops below 1.25%.
+
+    -   Even at the highest peer departure rates (approx. 23% in the 12-month view), the predicted probability rarely exceeds 2.5%, suggesting a ceiling on how much "peer effect" alone influences the average individual.
 
 
             """
@@ -654,7 +664,11 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot):
         .interactive()
     )
 
-    # To display or save the _chart
+    with open(mo.notebook_location() / "public" / "monthly_active_sfc_professionals_from_2003_to_2026.json", "r") as _file:
+        _chart_jsonspec = _file.read()
+    _monthly_active_sfc_professionals_from_2003_to_2026 = alt.Chart.from_json(_chart_jsonspec)
+    monthly_active_sfc_professionals_from_2003_to_2026 = mo.ui.altair_chart(_monthly_active_sfc_professionals_from_2003_to_2026)
+
 
 
     mo.vstack(
@@ -674,11 +688,7 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot):
             This is how you would see if you set the range from 2003 to 2026
             """,
             ),
-            mo.image(
-                src=mo.notebook_location()
-                / "public"
-                / "monthly_active_sfc_professionals_from_2003_to_2026.svg"
-            ),
+            monthly_active_sfc_professionals_from_2003_to_2026,
         ]
     )
     return
@@ -889,12 +899,7 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 
 @app.cell
-def _(
-    alt,
-    correlation_chart,
-    mo,
-    past_staff_departure_vs_next_month_departure_metrics,
-):
+def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     # Build the base chart
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X(
@@ -950,22 +955,11 @@ def _(
         [
             mo.md(
                 """
-    The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
-
-    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward.
-    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk.
-    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals.
+    Refer to the Results section at the top of this notebook for interpretation
                 """
             ),
             _chart,
 
-            mo.md(
-                """
-    ## How it would look like with 3 Months, 6 Months and 12 Months enabled for 2003 to 2016
-
-            """
-            ),
-            correlation_chart,
         ]
     )
     return
