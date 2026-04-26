@@ -544,7 +544,7 @@ def _(deepcopy, pd, pl, sfc_professional_company_employment_history):
 
 
 @app.cell(hide_code=True)
-def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
+def _(alt, mo, monthly_active_sfc_professional_snapshot):
     active_sfc_professional_by_month = mo.sql(
         f"""
         select
@@ -557,12 +557,6 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
         """
     )
 
-
-    # Assuming active_sfc_professional_by_month is your DataFrame
-    # Ensure the snapshot_month is in datetime format for proper temporal scaling
-    active_sfc_professional_by_month["snapshot_month"] = pd.to_datetime(
-        active_sfc_professional_by_month["snapshot_month"]
-    )
 
     # Create the bar _chart
     _chart = (
