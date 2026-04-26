@@ -647,8 +647,10 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 @app.cell
 def _(alt, past_staff_departure_vs_next_month_departure_metrics):
+    alt.data_transformers.enable("vegafusion")
+
     # Build the visualization using the aggregated SQL output
-    base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
+    _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X('pct_departed_staff:Q', 
                 title='Peer Departure % (Past X Months)',
                 scale=alt.Scale(domain=[0, 100])),
@@ -658,13 +660,13 @@ def _(alt, past_staff_departure_vs_next_month_departure_metrics):
     )
 
     # Layer 1: Scatter points representing each Company-Month
-    points = base.mark_point(opacity=0.4, size=25, color='steelblue')
+    _points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
 
     # Layer 2: Linear Regression line to show the trend
-    line = base.transform_regression('pct_departed_staff', 'avg_left_next_month').mark_line(color='red', size=3)
+    _line = _base.transform_regression('pct_departed_staff', 'avg_left_next_month').mark_line(color='red', size=3)
 
     # Combine layers and facet by the lookback window
-    chart = (points + line).facet(
+    chart = (_points + _line).facet(
         facet=alt.Facet('lookback_period:N', 
                         title=None, 
                         sort=['3 Months', '6 Months', '12 Months']),
@@ -705,7 +707,7 @@ def _(alt, monthly_active_sfc_professional_features_snapshot):
                 scale=alt.Scale(domain=[0, 1]))
     )
 
-    # 3. Create Scatter Points
+    # 3. Create Scatter _points
     points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
 
     # 4. Create Regression Lines (to visualize the trend/correlation)
