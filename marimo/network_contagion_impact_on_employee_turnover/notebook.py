@@ -29,7 +29,8 @@ def _(mo):
     mo.md(r"""
     # Network Contagion Impact on Employee Turnover
 
-    ### Original Paper on Arxiv: [https://arxiv.org/abs/2509.08001](https://arxiv.org/abs/2509.08001)
+    ### Original Paper on Alphaxiv: [https://www.alphaxiv.org/abs/2509.08001](https://www.alphaxiv.org/abs/2509.08001)
+
 
     ### What drives employee turnover?
     Have you ever wondered why employees leave their current company for another? Apart from personal career aspirations or compensation, "peer attrition" within the same organization has been shown to be a powerful driver of one's own departure. According to the research paper:
