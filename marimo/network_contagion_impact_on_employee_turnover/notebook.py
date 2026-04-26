@@ -20,16 +20,13 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(
-    width="medium",
-    layout_file="layouts/predict_employee_turnover.slides.json",
-)
+app = marimo.App(width="medium", layout_file="layouts/notebook.slides.json")
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Network Contagion in Financial Labor Markets
+    # Network Contagion Impact on Employee Turnover
 
     ### Original Paper on Arxiv: [https://arxiv.org/abs/2509.08001](https://arxiv.org/abs/2509.08001)
 
@@ -67,7 +64,6 @@ def _(mo):
             _img,
         ]
     )
-
     return
 
 
@@ -104,7 +100,6 @@ def _(mo):
             _img,
         ]
     )
-
     return
 
 
@@ -633,7 +628,6 @@ def _(mo):
             lookback_selection,
         ]
     )
-
     return (lookback_selection,)
 
 
