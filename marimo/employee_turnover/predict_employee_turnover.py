@@ -401,7 +401,22 @@ def _(mo):
     mo.md(r"""
     ## Step 2: Generate Monthly Active SFC professional Snapshot
 
-    With the SCD Type 2 table created, we will now generate a monthly snapshot of active SFC professional.
+    Now we will transform SCD Type 2 table into a monthly snapshot of active SFC professional.
+
+    Here's a summary.
+
+    | Feature | SCD Type 2 (Source) | Monthly Snapshot (Target) |
+    | :--- | :--- | :--- |
+    | **Row Meaning** | A version of a record. | The state of a record for each month. |
+    | **Granularity** | Event-based (new row on change). | Time-based (new row every month). |
+    | **Storage** | Efficient (only stores changes). | Heavy (duplicates data for every month). |
+    | **Querying** | Harder (requires range logic). | Easiest (filter by a single month). |
+
+    ## Feature Engineering
+
+    To `predict the probability of turnover in the subsequent month`, we will need a target flag whether the employee will have left in the next month.
+
+    We will create the target variable `left_next_month`.
     """)
     return
 
@@ -427,11 +442,24 @@ def _(pd, sfc_professional_company_employment_history):
             active['snapshot_month'] = m
             snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
 
-        monthly_active_sfc_professionals = pd.concat(snapshot_list, ignore_index=True)
-        return monthly_active_sfc_professionals
+        monthly_active_sfc_professional_snapshot = pd.concat(snapshot_list, ignore_index=True)
+
+
+        return monthly_active_sfc_professional_snapshot
+    
+    def add_features(monthly_active_sfc_professional_snapshot):
+        # add the feature for prediction
+    
+        monthly_active_sfc_professional_snapshot['left_next_month'] = (
+            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
+            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
+        ).astype(int)
+
+        return monthly_active_sfc_professional_snapshot
 
     monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
 
+    monthly_active_sfc_professional_snapshot = add_features(monthly_active_sfc_professional_snapshot)
     monthly_active_sfc_professional_snapshot
     return (monthly_active_sfc_professional_snapshot,)
 
@@ -493,8 +521,55 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Employee-employee network
+    # Feature Engineering
     """)
+    return
+
+
+@app.cell
+def _(monthly_active_sfc_professional_snapshot, pd):
+    def perform_feature_propagation(df):
+        """
+        Performs feature propagation to capture peer influence (contagion).
+        Calculates the 'Peer Turnover Rate' for each professional at each snapshot.
+        """
+        # 1. Ensure time columns are in datetime format
+        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+    
+        # 2. Define the feature to propagate (e.g., the target signal 'left_next_month')
+        # In practice, this represents the probability or historical exit rate of peers.
+        feature_to_propagate = 'left_next_month'
+    
+        # 3. Group by snapshot and company to find peers
+        # We calculate the firm-level turnover rate excluding the individual themselves
+        # to avoid data leakage (self-influence).
+    
+        # Calculate sum of 'left_next_month' and count of employees per firm/month
+        firm_stats = df.groupby(['snapshot_month', 'companyId'])[feature_to_propagate].agg(['sum', 'count']).reset_index()
+        firm_stats.columns = ['snapshot_month', 'companyId', 'firm_total_exits', 'firm_size']
+    
+        # Merge stats back to the original dataframe
+        df = df.merge(firm_stats, on=['snapshot_month', 'companyId'], how='left')
+    
+        # 4. Apply the propagation logic:
+        # Peer_Feature_i = (Sum_of_Peer_Features - Feature_i) / (Firm_Size - 1)
+        # This represents the average 'feature' value of all OTHER people in the same firm.
+    
+        df['peer_turnover_rate'] = (df['firm_total_exits'] - df[feature_to_propagate]) / (df['firm_size'] - 1)
+    
+        # Fill NaNs for firms with only 1 employee (no peers to propagate from)
+        df['peer_turnover_rate'] = df['peer_turnover_rate'].fillna(0)
+    
+        # 5. Optional: Propagate other features like 'average tenure' or 'stability'
+        # Following the paper's 'Organizational Stability' metrics
+        # (Assuming a 'tenure' column exists or can be derived from snapshot - startDate)
+    
+        return df
+
+
+    processed_df = perform_feature_propagation(monthly_active_sfc_professional_snapshot)
+
+    processed_df[['snapshot_month', 'companyId', 'professionalId', 'peer_turnover_rate']].head()
     return
 
 
@@ -507,6 +582,17 @@ def _(mo):
 
 
 @app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    # 
+    return
+
+
+@app.cell(disabled=True)
 def _(monthly_active_sfc_professional_snapshot, pd):
     import matplotlib.pyplot as plt
 
