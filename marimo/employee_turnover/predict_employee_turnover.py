@@ -476,14 +476,6 @@ def _(mo, sfc_professional_company_employment_history):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
- 
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     ## Step 2: Generate Monthly Active SFC professional Snapshot
 
     Now we will transform SCD Type 2 table into a monthly snapshot of active SFC professional.
