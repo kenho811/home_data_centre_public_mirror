@@ -515,9 +515,8 @@ def _(mo):
 
 @app.cell
 def _(monthly_active_sfc_professional_snapshot, pd):
-    def add_features(monthly_active_sfc_professional_snapshot):
-        # add the feature for prediction
-    
+    def add_left_next_momth(monthly_active_sfc_professional_snapshot):
+        # add `left_next_month` to indicate if the professional will leave within the coming month
         monthly_active_sfc_professional_snapshot['left_next_month'] = (
             (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
             (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
@@ -525,13 +524,64 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
         return monthly_active_sfc_professional_snapshot
 
-    monthly_active_sfc_professional_features_snapshot = add_features(monthly_active_sfc_professional_snapshot)
+
+    def add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=6):
+        df = monthly_active_sfc_professional_snapshot
+        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+    
+        # 1. Identify the "Historical Cohort"
+        # This is the list of people at each company at every month in the history.
+        historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
+    
+        # 2. Align the Past with the Present
+        # We shift the date of the cohort FORWARD. 
+        # Example: A cohort from 2025-01-01 is now tagged as 'comparison_month' 2025-07-01.
+        historical_cohorts['comparison_month'] = historical_cohorts['snapshot_month'] + pd.DateOffset(months=num_past_months)
+    
+        # 3. Individual-Level Tracking (Left Join)
+        # We take the cohort that was there 6 months ago and check if they exist in the current snapshot.
+        presence_check = pd.merge(
+            historical_cohorts,
+            df[['snapshot_month', 'companyId', 'professionalId']],
+            left_on=['comparison_month', 'companyId', 'professionalId'],
+            right_on=['snapshot_month', 'companyId', 'professionalId'],
+            how='left',
+            indicator=True
+        )
+    
+        # If indicator is 'left_only', the person was there 6 months ago but is GONE now.
+        presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
+    
+        # 4. Aggregate to Company-Level Percentage
+        # Group by the current month (comparison_month) to see the fate of the past cohort.
+        departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
+            departed_count=('is_departed', 'sum'),
+            total_past_cohort_size=('is_departed', 'count')
+        ).reset_index()
+    
+        col_name = f'pct_departed_staff_in_past_{num_past_months}_months'
+        departure_stats[col_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
+    
+        # 5. Merge the final metric back to the original dataframe
+        final_df = pd.merge(
+            df,
+            departure_stats[['comparison_month', 'companyId', col_name]],
+            left_on=['snapshot_month', 'companyId'],
+            right_on=['comparison_month', 'companyId'],
+            how='left'
+        ).drop(columns=['comparison_month'])
+    
+        return final_df
+
+    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
+    monthly_active_sfc_professional_features_snapshot = add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=6)
+
     monthly_active_sfc_professional_features_snapshot
-    return
+    return (monthly_active_sfc_professional_features_snapshot,)
 
 
 @app.cell
-def _(monthly_active_sfc_professional_snapshot, pd):
+def _(monthly_active_sfc_professional_features_snapshot, pd):
     def perform_feature_propagation(df):
         """
         Performs feature propagation to capture peer influence (contagion).
@@ -550,6 +600,8 @@ def _(monthly_active_sfc_professional_snapshot, pd):
     
         # Calculate sum of 'left_next_month' and count of employees per firm/month
         firm_stats = df.groupby(['snapshot_month', 'companyId'])[feature_to_propagate].agg(['sum', 'count']).reset_index()
+
+        return firm_stats
         firm_stats.columns = ['snapshot_month', 'companyId', 'firm_total_exits', 'firm_size']
     
         # Merge stats back to the original dataframe
@@ -571,9 +623,9 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         return df
 
 
-    processed_df = perform_feature_propagation(monthly_active_sfc_professional_snapshot)
-
-    processed_df[['snapshot_month', 'companyId', 'professionalId', 'peer_turnover_rate']].head()
+    processed_df = perform_feature_propagation(monthly_active_sfc_professional_features_snapshot)
+    processed_df
+    # processed_df[['snapshot_month', 'companyId', 'professionalId', 'peer_turnover_rate']].head()
     return
 
 
