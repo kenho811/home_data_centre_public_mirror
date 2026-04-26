@@ -504,11 +504,26 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Step 3: Feature Engineering
+    Step 3: Feature Engineering
+    ---------------------------
 
-    To `predict the probability of turnover in the subsequent month`, we will need a target flag whether the employee will have left in the next month.
+    To predict the probability of turnover, we need to define exactly what we are trying to forecast and which signals might tip us off. This section adds the following features to the dataset:
 
-    We will create the target variable `left_next_month`.
+    ### 1. **`left_next_month`** (Dependent Variable)
+
+    -   **Definition**: A binary flag (0 or 1) indicating whether an employee departs the company in the month immediately following the current snapshot.
+
+    -   **Description**: This is our "ground truth" or target variable. It is calculated by comparing the professional's `endDate` against the current `snapshot_month`. If the end date falls within the next 30-day window, the value is 1; otherwise, it is 0.
+
+    ### 2. **`pct_departed_staff_in_past_{num_past_months}_months`** (Independent Variable / Predictor)
+
+    -   **Definition**: The percentage of the specific cohort of staff present $X$ months ago who are no longer with the company in the current month.
+
+    -   **Description**: This feature serves as a leading indicator of "social contagion" or organizational instability. Unlike simple headcount changes, this metric performs a row-level lookup on unique IDs to track the actual attrition of a specific peer group.
+
+        -   **High values** suggest a "sinking ship" scenario where established peers are leaving, which may increase the likelihood of the remaining staff departing.
+
+    -   **Low values** suggest a stable environment with high peer retention.
     """)
     return
 
@@ -526,6 +541,8 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
 
     def add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=6):
+        col_name = f'pct_departed_staff_in_past_{num_past_months}_months'
+ 
         df = monthly_active_sfc_professional_snapshot
         df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
     
@@ -559,7 +576,6 @@ def _(monthly_active_sfc_professional_snapshot, pd):
             total_past_cohort_size=('is_departed', 'count')
         ).reset_index()
     
-        col_name = f'pct_departed_staff_in_past_{num_past_months}_months'
         departure_stats[col_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
     
         # 5. Merge the final metric back to the original dataframe
@@ -571,6 +587,9 @@ def _(monthly_active_sfc_professional_snapshot, pd):
             how='left'
         ).drop(columns=['comparison_month'])
     
+        # 6. Drop rows where the historical feature is NULL (e.g., the first X months of history)
+        final_df = final_df.dropna(subset=[col_name])
+
         return final_df
 
     monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
