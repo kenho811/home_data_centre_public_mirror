@@ -411,12 +411,6 @@ def _(mo):
     | **Granularity** | Event-based (new row on change). | Time-based (new row every month). |
     | **Storage** | Efficient (only stores changes). | Heavy (duplicates data for every month). |
     | **Querying** | Harder (requires range logic). | Easiest (filter by a single month). |
-
-    ## Feature Engineering
-
-    To `predict the probability of turnover in the subsequent month`, we will need a target flag whether the employee will have left in the next month.
-
-    We will create the target variable `left_next_month`.
     """)
     return
 
@@ -447,20 +441,9 @@ def _(pd, sfc_professional_company_employment_history):
 
         return monthly_active_sfc_professional_snapshot
     
-    def add_features(monthly_active_sfc_professional_snapshot):
-        # add the feature for prediction
-    
-        monthly_active_sfc_professional_snapshot['left_next_month'] = (
-            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
-            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
-        ).astype(int)
-
-        return monthly_active_sfc_professional_snapshot
 
     monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
 
-    monthly_active_sfc_professional_snapshot = add_features(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_snapshot
     return (monthly_active_sfc_professional_snapshot,)
 
 
@@ -521,8 +504,29 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Feature Engineering
+    ## Step 3: Feature Engineering
+
+    To `predict the probability of turnover in the subsequent month`, we will need a target flag whether the employee will have left in the next month.
+
+    We will create the target variable `left_next_month`.
     """)
+    return
+
+
+@app.cell
+def _(monthly_active_sfc_professional_snapshot, pd):
+    def add_features(monthly_active_sfc_professional_snapshot):
+        # add the feature for prediction
+    
+        monthly_active_sfc_professional_snapshot['left_next_month'] = (
+            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
+            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
+        ).astype(int)
+
+        return monthly_active_sfc_professional_snapshot
+
+    monthly_active_sfc_professional_features_snapshot = add_features(monthly_active_sfc_professional_snapshot)
+    monthly_active_sfc_professional_features_snapshot
     return
 
 
