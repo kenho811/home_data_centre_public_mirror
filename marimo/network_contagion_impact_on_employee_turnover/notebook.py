@@ -77,9 +77,7 @@ def _(alt, mo):
     with open(mo.notebook_location() / "public" / "correlation_of_historical_departure_on_employees_next_month_departure.json", "r") as f:
         _chart_jsonspec = f.read()
 
-    _correlation_chart = alt.Chart.from_json(
-        _chart_jsonspec
-    )
+    _correlation_chart = alt.Chart.from_json(_chart_jsonspec)
     _correlation_chart = mo.ui.altair_chart(_correlation_chart)
 
 
@@ -885,9 +883,10 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 @app.cell
 def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
+
     alt.data_transformers.enable("vegafusion")
 
-    # Build the base chart with a fixed X-axis scale
+    # Build the base chart
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X(
             "pct_departed_staff:Q",
@@ -896,17 +895,20 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         ),
         y=alt.Y(
             "avg_left_next_month:Q",
-            title="Prob. of Leaving Next Month (Mean)",
+            title="Turnover Probability (%)",
+            # Format axis as percentage (e.g., 0.05 becomes 5%)
+            axis=alt.Axis(format='%'), 
             scale=alt.Scale(domain=[0, 0.05]),
         ),
     )
 
-    # Layer 1: Scatter points with TOOLTIPS added here
+    # Layer 1: Scatter points with updated tooltip format
     _points = _base.mark_point(opacity=0.4, size=25, color="steelblue").encode(
         tooltip=[
             alt.Tooltip("lookback_period:N", title="Window"),
             alt.Tooltip("pct_departed_staff:Q", title="Peer Departure %", format=".2f"),
-            alt.Tooltip("avg_left_next_month:Q", title="Avg Prob. of Leaving", format=".4f")
+            # Format tooltip as percentage with 2 decimal places (e.g., 1.25%)
+            alt.Tooltip("avg_left_next_month:Q", title="Avg Prob. of Leaving", format=".2%")
         ]
     )
 
@@ -916,7 +918,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     ).mark_line(color="red", size=3)
 
 
-    # Combine layers and facet by the lookback window
+    # Combine layers and facet
     _chart = (
         (_points + _line)
         .facet(
@@ -934,6 +936,8 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         .configure_view(stroke=None)
         .resolve_axis(x='independent') 
     )
+
+    _chart.save('correlation_of_historical_departure_on_employees_next_month_departure.json')
 
     mo.vstack(
         [
