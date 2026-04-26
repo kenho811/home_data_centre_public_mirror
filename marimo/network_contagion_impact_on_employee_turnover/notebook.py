@@ -822,6 +822,8 @@ def _(
 
     selected_months = [int(m) for m in lookback_selection.value]
 
+    selected_months.sort()
+
     monthly_active_sfc_professional_features_snapshot = add_left_next_momth(
         monthly_active_sfc_professional_snapshot
     )
@@ -876,12 +878,12 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     alt.data_transformers.enable("vegafusion")
 
-    # Build the base chart
+    # Build the base chart with a fixed X-axis scale
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X(
             "pct_departed_staff:Q",
             title="Peer Departure % (Past X Months)",
-            scale=alt.Scale(domain=[0, 50]),
+            scale=alt.Scale(domain=[0, 30]),  # Explicitly defined scale
         ),
         y=alt.Y(
             "avg_left_next_month:Q",
@@ -898,44 +900,29 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         "pct_departed_staff", "avg_left_next_month"
     ).mark_line(color="red", size=3)
 
-    # Layer 3: Regression Coefficients Label
-    # We use transform_regression with params=True to get the coefficients
-    _coef_label = (
-        _base.transform_regression(
-            "pct_departed_staff", "avg_left_next_month", params=True
-        )
-        .mark_text(
-            align="left",
-            baseline="top",
-            dx=-140,  # Adjust position based on your scale
-            dy=-80,
-            color="red",
-            fontWeight="bold",
-        )
-        .encode(
-            # format: .4f provides 4 decimal places for the slope
-            text=alt.Text("coef:Q", format=".4f", title="Coefficient")
-        )
-    )
 
     # Combine layers and facet by the lookback window
     _chart = (
-        (_points + _line + _coef_label)
+        (_points + _line)
         .facet(
             facet=alt.Facet(
                 "lookback_period:N",
                 title=None,
+                # Force the specific order: 3 -> 6 -> 12
                 sort=["3 Months", "6 Months", "12 Months"],
             ),
             columns=3,
         )
         .properties(
-            title="Impact of Peer Departures on Individual Turnover Probability (with Coefficients)"
+            title="Impact of Peer Departures on Individual Turnover Probability"
         )
         .configure_axis(grid=True)
         .configure_view(stroke=None)
+        # resolve_axis ensures the scale/labels appear on every facet
+        .resolve_axis(x='independent') 
     )
 
+    _chart.save('chart_test.json')
 
     mo.vstack(
         [
@@ -946,9 +933,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
     * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
     * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
-
-
-            """
+                """
             ),
             _chart,
         ]
