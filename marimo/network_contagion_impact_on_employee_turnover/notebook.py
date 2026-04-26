@@ -136,6 +136,8 @@ def _():
     import pandas as pd
     import marimo as mo
     import altair as alt
+    from copy import deepcopy
+
 
 
     def load_dataset():
@@ -166,7 +168,7 @@ def _():
     sfc_licenses = load_dataset()
 
     sfc_licenses
-    return alt, mo, pd, sfc_licenses
+    return alt, deepcopy, mo, pd, sfc_licenses
 
 
 @app.cell
@@ -484,9 +486,9 @@ def _(mo):
 
 
 @app.cell
-def _(pd, sfc_professional_company_employment_history):
+def _(deepcopy, pd, sfc_professional_company_employment_history):
     def generate_monthly_active_sfc_professional_snapshot(df):
-        df = df.copy()
+        df = deepcopy(df)
         df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
         # Fill empty end dates with a future date to represent current employees
         df["endDate"] = pd.to_datetime(df["endDate"]).fillna(
@@ -502,7 +504,7 @@ def _(pd, sfc_professional_company_employment_history):
         snapshot_list = []
         for m in months:
             # Everyone active in month 'm'
-            active = df[(df["effectiveDate"] <= m) & (df["endDate"] > m)].copy()
+            active = deepcopy(df[(df["effectiveDate"] <= m) & (df["endDate"] > m)])
             active["snapshot_month"] = m
             snapshot_list.append(
                 active[
@@ -632,7 +634,12 @@ def _(mo):
 
 
 @app.cell
-def _(lookback_selection, monthly_active_sfc_professional_snapshot, pd):
+def _(
+    deepcopy,
+    lookback_selection,
+    monthly_active_sfc_professional_snapshot,
+    pd,
+):
     def add_left_next_momth(monthly_active_sfc_professional_snapshot):
         # add `left_next_month` to indicate if the professional will leave within the coming month
         monthly_active_sfc_professional_snapshot['left_next_month'] = (
@@ -658,7 +665,7 @@ def _(lookback_selection, monthly_active_sfc_professional_snapshot, pd):
 
         for x in lookback_months_list:
             # Create a reference for the cohort from 'x' months ago
-            cohort_shifted = historical_cohorts.copy()
+            cohort_shifted = deepcopy(historical_cohorts)
             cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
 
             # 2. Match the past cohort to the current state (Today)
