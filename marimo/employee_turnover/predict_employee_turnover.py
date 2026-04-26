@@ -2,6 +2,7 @@
 # dependencies = [
 #     "altair==6.1.0",
 #     "duckdb==1.5.2",
+#     "ipython==9.13.0",
 #     "marimo",
 #     "matplotlib==3.10.9",
 #     "networkx==3.6.1",
@@ -10,6 +11,7 @@
 #     "pyarrow==24.0.0",
 #     "scikit-learn==1.8.0",
 #     "sqlglot==30.6.0",
+#     "vegafusion==2.0.3",
 # ]
 # requires-python = ">=3.12"
 # ///
@@ -612,6 +614,8 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
 @app.cell
 def _(alt, monthly_active_sfc_professional_features_snapshot):
+    alt.data_transformers.enable("vegafusion")
+
     # 1. Aggregate the data to Company-Month level 
     # We calculate the mean of 'left_next_month' to get the turnover probability
     agg_data = monthly_active_sfc_professional_features_snapshot.groupby(
@@ -649,8 +653,7 @@ def _(alt, monthly_active_sfc_professional_features_snapshot):
         stroke=None
     )
 
-    # Display or save the _chart
-    _chart.display()
+    _chart
     return
 
 
