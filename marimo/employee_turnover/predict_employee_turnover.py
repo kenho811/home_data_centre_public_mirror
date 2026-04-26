@@ -159,28 +159,28 @@ def _(alt, mo, pd, sfc_licenses):
     wide_data["prev_diff"] = wide_data["diff"].shift(1)
     crossovers = wide_data[wide_data["diff"] * wide_data["prev_diff"] < 0]
 
-    # --- 5. CREATE THE LAYERED CHART ---
+    # --- 5. CREATE THE LAYERED _chart ---
 
-    # Base X-axis
-    base = alt.Chart(plot_data).encode(
+    # _base X-axis
+    _base = alt._chart(plot_data).encode(
         x=alt.X("year:T", title="Year", axis=alt.Axis(format="%Y"))
     )
 
     # Shading: Full vertical slices
     shading = (
-        alt.Chart(wide_data)
+        alt._chart(wide_data)
         .transform_filter("datum.Created > datum.Terminated")
         .mark_rect(opacity=0.15, color="#1f77b4")
         .encode(
             x="year:T",
             x2="next_year:T",
-            y=alt.value(0),  # Top of chart
-            y2=alt.value(400),  # Bottom of chart (adjust if height is different)
+            y=alt.value(0),  # Top of _chart
+            y2=alt.value(400),  # Bottom of _chart (adjust if height is different)
         )
     )
 
-    # Line chart
-    lines = base.mark_line(point=True).encode(
+    # Line _chart
+    lines = _base.mark_line(point=True).encode(
         y=alt.Y("count:Q", title="Number of Licenses"),
         color=alt.Color(
             "status:N",
@@ -198,7 +198,7 @@ def _(alt, mo, pd, sfc_licenses):
 
     # Crossover rules
     rules = (
-        alt.Chart(crossovers)
+        alt._chart(crossovers)
         .mark_rule(color="gray", strokeDash=[4, 4], size=1.5)
         .encode(
             x="year:T",
@@ -209,7 +209,7 @@ def _(alt, mo, pd, sfc_licenses):
     )
 
     # Final Layering
-    chart = (
+    _chart = (
         (shading + lines + rules)
         .properties(
             title="YoY SFC License Trends (Growth Periods Shaded)",
@@ -234,7 +234,7 @@ def _(alt, mo, pd, sfc_licenses):
             license cancellations.
             """
             ),
-            chart,
+            _chart,
         ]
     )
     return
@@ -409,7 +409,7 @@ def _(mo):
     | Feature | SCD Type 2 (Source) | Monthly Snapshot (Target) |
     | :--- | :--- | :--- |
     | **Row Meaning** | A version of a record. | The state of a record for each month. |
-    | **Granularity** | Event-based (new row on change). | Time-based (new row every month). |
+    | **Granularity** | Event-_based (new row on change). | Time-_based (new row every month). |
     | **Storage** | Efficient (only stores changes). | Heavy (duplicates data for every month). |
     | **Querying** | Harder (requires range logic). | Easiest (filter by a single month). |
     """)
@@ -467,8 +467,8 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
     # Ensure the snapshot_month is in datetime format for proper temporal scaling
     active_sfc_professional_by_month['snapshot_month'] = pd.to_datetime(active_sfc_professional_by_month['snapshot_month'])
 
-    # Create the bar chart
-    _chart = alt.Chart(active_sfc_professional_by_month).mark_bar().encode(
+    # Create the bar _chart
+    _chart = alt._chart(active_sfc_professional_by_month).mark_bar().encode(
         x=alt.X('snapshot_month:T', title='Snapshot Month'),
         y=alt.Y('active_sfc_professional:Q', title='Active SFC Professionals'),
         tooltip=[
@@ -481,7 +481,7 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
         height=400
     ).interactive()
 
-    # To display or save the chart
+    # To display or save the _chart
 
 
 
@@ -491,9 +491,9 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
                 """
             ## Month-over-month Active SFC professionals (2003–2026)
 
-            The bar chart of active SFC professionals reflects a resilient but evolving financial labor market between 2004 and 2026. The data aligns with the observation that the industry has seen consistent net expansion for the majority of the last two decades, characterized by the steady climb from approximately 20,000 professionals to a peak of nearly 40,000. This long-term growth supports the premise that new license creations have generally outpaced terminations over this extended period.
+            The bar _chart of active SFC professionals reflects a resilient but evolving financial labor market between 2004 and 2026. The data aligns with the observation that the industry has seen consistent net expansion for the majority of the last two decades, characterized by the steady climb from approximately 20,000 professionals to a peak of nearly 40,000. This long-term growth supports the premise that new license creations have generally outpaced terminations over this extended period.
 
-            However, the chart also validates the impact of external stressors on market momentum. The stagnation observed around 2009 and the more recent plateau starting in 2020 directly mirror the periods where license issuance and termination reached parity. Following the 2020 peak, the slight decline in the total count of active professionals through 2026 suggests a more sustained period of industry contraction or consolidation, where the balance has shifted toward terminations. This recent trend emphasizes how global events can transition the market from a state of steady growth into a phase of significant labor market stress and stagnation.
+            However, the _chart also validates the impact of external stressors on market momentum. The stagnation observed around 2009 and the more recent plateau starting in 2020 directly mirror the periods where license issuance and termination reached parity. Following the 2020 peak, the slight decline in the total count of active professionals through 2026 suggests a more sustained period of industry contraction or consolidation, where the balance has shifted toward terminations. This recent trend emphasizes how global events can transition the market from a state of steady growth into a phase of significant labor market stress and stagnation.
             """
             ),
             _chart,
@@ -541,177 +541,116 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         return monthly_active_sfc_professional_snapshot
 
 
-    def add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months, col_name):
- 
-        df = monthly_active_sfc_professional_snapshot
-        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+
+    def create_multi_lookback_features(df, lookback_months_list):
+        """
+        Creates a long-form dataframe containing peer departure percentages 
+        for multiple lookback windows.
     
-        # 1. Identify the "Historical Cohort"
-        # This is the list of people at each company at every month in the history.
+        """
+        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+        all_results = []
+    
+        # 1. Identify the unique people at each company per month
         historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
     
-        # 2. Align the Past with the Present
-        # We shift the date of the cohort FORWARD. 
-        # Example: A cohort from 2025-01-01 is now tagged as 'comparison_month' 2025-07-01.
-        historical_cohorts['comparison_month'] = historical_cohorts['snapshot_month'] + pd.DateOffset(months=num_past_months)
+        for x in lookback_months_list:
+            # Create a reference for the cohort from 'x' months ago
+            cohort_shifted = historical_cohorts.copy()
+            cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
+        
+            # 2. Match the past cohort to the current state (Today)
+            presence_check = pd.merge(
+                cohort_shifted,
+                df[['snapshot_month', 'companyId', 'professionalId']],
+                left_on=['comparison_month', 'companyId', 'professionalId'],
+                right_on=['snapshot_month', 'companyId', 'professionalId'],
+                how='left',
+                indicator=True
+            )
+        
+            # If 'left_only', that specific person from the past is gone today
+            presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
+        
+            # 3. Aggregate to Company-Level Percentage
+            departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
+                departed_count=('is_departed', 'sum'),
+                total_past_cohort_size=('is_departed', 'count')
+            ).reset_index()
+        
+            feature_name = 'pct_departed_staff'
+            departure_stats[feature_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
+        
+            # 4. Merge back to individual records for this specific 'x'
+            temp_df = pd.merge(
+                df,
+                departure_stats[['comparison_month', 'companyId', feature_name]],
+                left_on=['snapshot_month', 'companyId'],
+                right_on=['comparison_month', 'companyId'],
+                how='left'
+            ).drop(columns=['comparison_month'])
+        
+            # Add metadata for facetting
+            temp_df['lookback_period'] = f"{x} Months"
+        
+            # Drop rows where we don't have enough history for this specific window
+            temp_df = temp_df.dropna(subset=[feature_name])
+        
+            all_results.append(temp_df)
     
-        # 3. Individual-Level Tracking (Left Join)
-        # We take the cohort that was there 6 months ago and check if they exist in the current snapshot.
-        presence_check = pd.merge(
-            historical_cohorts,
-            df[['snapshot_month', 'companyId', 'professionalId']],
-            left_on=['comparison_month', 'companyId', 'professionalId'],
-            right_on=['snapshot_month', 'companyId', 'professionalId'],
-            how='left',
-            indicator=True
-        )
-    
-        # If indicator is 'left_only', the person was there 6 months ago but is GONE now.
-        presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
-    
-        # 4. Aggregate to Company-Level Percentage
-        # Group by the current month (comparison_month) to see the fate of the past cohort.
-        departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
-            departed_count=('is_departed', 'sum'),
-            total_past_cohort_size=('is_departed', 'count')
-        ).reset_index()
-    
-        departure_stats[col_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
-    
-        # 5. Merge the final metric back to the original dataframe
-        final_df = pd.merge(
-            df,
-            departure_stats[['comparison_month', 'companyId', col_name]],
-            left_on=['snapshot_month', 'companyId'],
-            right_on=['comparison_month', 'companyId'],
-            how='left'
-        ).drop(columns=['comparison_month'])
-    
-        # 6. Drop rows where the historical feature is NULL (e.g., the first X months of history)
-        final_df = final_df.dropna(subset=[col_name])
+        # Combine all lookbacks into one long-form dataframe
+        return pd.concat(all_results, ignore_index=True)
 
-        return final_df
 
-    num_past_months=6
 
     monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_features_snapshot = add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=num_past_months, col_name=f'pct_departed_staff_in_past_{num_past_months}_months')
+    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=[3, 6, 12])
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
 
 
 @app.cell
-def _(monthly_active_sfc_professional_features_snapshot):
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import roc_auc_score, precision_recall_curve
+def _(alt, monthly_active_sfc_professional_features_snapshot):
+    # 1. Aggregate the data to Company-Month level 
+    # We calculate the mean of 'left_next_month' to get the turnover probability
+    agg_data = monthly_active_sfc_professional_features_snapshot.groupby(
+        ['lookback_period', 'snapshot_month', 'companyId']
+    ).agg({
+        'pct_departed_staff': 'first',
+        'left_next_month': 'mean'
+    }).reset_index()
 
-    # 1. Prepare your Features (X) and Target (y)
-    # X needs to be a 2D array for sklearn
-    X = monthly_active_sfc_professional_features_snapshot[['pct_departed_staff_in_past_6_months']] 
-    y = monthly_active_sfc_professional_features_snapshot['left_next_month']
+    # 2. Define the _base _chart encoding
+    _base = alt._chart(agg_data).encode(
+        x=alt.X('pct_departed_staff:Q', 
+                title='Peer Departure % (Past X Months)',
+                scale=alt.Scale(domain=[0, 100])),
+        y=alt.Y('left_next_month:Q', 
+                title='Prob. of Leaving Next Month',
+                scale=alt.Scale(domain=[0, 1]))
+    )
 
-    # 2. Handle Class Imbalance
-    # The paper mentions turnover is only ~2.3%. 
-    # We should use 'class_weight' so the model doesn't just predict "0" for everyone.
-    model = LogisticRegression(class_weight='balanced')
+    # 3. Create Scatter Points
+    points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
 
-    # 3. Train the model
-    model.fit(X, y)
+    # 4. Create Regression Lines (to visualize the trend/correlation)
+    line = _base.transform_regression('pct_departed_staff', 'left_next_month').mark_line(color='red', size=3)
 
-    # 4. Predict Probabilities
-    # predict_proba returns [prob_of_0, prob_of_1]. We want index 1.
-    monthly_active_sfc_professional_features_snapshot['predicted_chance'] = model.predict_proba(X)[:, 1]
+    # 5. Combine, Facet, and Configure
+    _chart = (points + line).facet(
+        facet=alt.Facet('lookback_period:N', title=None, sort=['3 Months', '6 Months', '12 Months']),
+        columns=3
+    ).properties(
+        title='Impact of Peer Departures on Individual Turnover Probability'
+    ).configure_axis(
+        grid=True
+    ).configure_view(
+        stroke=None
+    )
 
-    print(f"Model Coefficient: {model.coef_[0][0]}")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Monthly Active Employee Snapshots
-    """)
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-    # 
-    return
-
-
-@app.cell(disabled=True)
-def _(monthly_active_sfc_professional_snapshot, pd):
-    import matplotlib.pyplot as plt
-
-    def generate_contagion_analysis(monthly_active_sfc_professionals):
-
-        # 3. Calculate Peer Groups (Who was there 6 months ago?)
-        monthly_active_sfc_professionals['lookback_month'] = monthly_active_sfc_professionals['snapshot_month'] - pd.DateOffset(months=6)
-
-        # Self-merge to find out who was at the same company 6 months ago
-        peers_then = monthly_active_sfc_professionals[['snapshot_month', 'companyId', 'professionalId']].copy()
-
-        # 4. Determine Departures
-        # We count how many peers a person had 6 months ago vs how many of THOSE specific people are still here
-        # This part is handled by comparing the 'monthly_active_sfc_professionals' against its own past state
-
-        # (Simplified calculation for the 23k rows to ensure speed)
-        # We calculate the company-level turnover rate over 6 months as a proxy for peer influence
-        company_monthly_stats = monthly_active_sfc_professionals.groupby(['snapshot_month', 'companyId'])['professionalId'].nunique().reset_index()
-        company_monthly_stats.columns = ['month', 'companyId', 'current_count']
-
-        # Shift counts by 6 months to see the change
-        company_monthly_stats['past_month'] = company_monthly_stats['month'] - pd.DateOffset(months=6)
-        stats_merged = pd.merge(
-            company_monthly_stats, 
-            company_monthly_stats, 
-            left_on=['past_month', 'companyId'], 
-            right_on=['month', 'companyId'], 
-            suffixes=('', '_past')
-        )
-
-        # Peer departure % = (Peers then - Peers now) / Peers then
-        stats_merged['peer_departure_pct'] = (1 - (stats_merged['current_count'] / stats_merged['current_count_past'])).clip(0, 1) * 100
-
-        # 5. Link individual turnover to these peer departure stats
-        # Did the person leave in the month following the snapshot?
-        monthly_active_sfc_professionals['left_next_month'] = (
-            (monthly_active_sfc_professionals['endDate'] > monthly_active_sfc_professionals['snapshot_month']) & 
-            (monthly_active_sfc_professionals['endDate'] <= (monthly_active_sfc_professionals['snapshot_month'] + pd.DateOffset(months=1)))
-        ).astype(int)
-
-        final_data = pd.merge(
-            monthly_active_sfc_professionals, 
-            stats_merged[['month', 'companyId', 'peer_departure_pct']], 
-            left_on=['snapshot_month', 'companyId'], 
-            right_on=['month', 'companyId']
-        )
-
-        # 6. Final Plotting Logic
-        # Grouping into 10% bins for the graph
-        final_data['bin'] = (final_data['peer_departure_pct'] // 10) * 10
-        plot_points = final_data.groupby('bin')['left_next_month'].mean() * 100
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(plot_points.index, plot_points.values, marker='o', linewidth=2, color='#e31a1c')
-        plt.fill_between(plot_points.index, plot_points.values, alpha=0.1, color='#e31a1c')
-        plt.axvline(x=30, color='black', linestyle='--', alpha=0.3)
-        plt.title('Impact of Peer Departures on Employee Turnover (23k Rows)', fontsize=14)
-        plt.xlabel('Percentage of Peers who Departed (Last 6 Months)', fontsize=12)
-        plt.ylabel('Prob. of Individual Leaving Next Month (%)', fontsize=12)
-        plt.grid(True, linestyle=':', alpha=0.6)
-        plt.show()
-
-    # Run the function
-    generate_contagion_analysis(monthly_active_sfc_professional_snapshot)
+    # Display or save the _chart
+    _chart.display()
     return
 
 
