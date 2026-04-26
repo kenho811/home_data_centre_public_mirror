@@ -8,6 +8,7 @@
 #     "networkx==3.6.1",
 #     "numpy==2.4.4",
 #     "pandas==3.0.2",
+#     "polars==1.40.1",
 #     "pyarrow==24.0.0",
 #     "scikit-learn==1.8.0",
 #     "sqlglot==30.6.0",
@@ -487,6 +488,8 @@ def _(mo):
 
 @app.cell
 def _(deepcopy, pd, sfc_professional_company_employment_history):
+    import polars as pl
+
     def generate_monthly_active_sfc_professional_snapshot(df):
         df = deepcopy(df)
         df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
@@ -519,9 +522,15 @@ def _(deepcopy, pd, sfc_professional_company_employment_history):
         return monthly_active_sfc_professional_snapshot
 
 
+    if isinstance(sfc_professional_company_employment_history, pl.DataFrame):
+        _sfc_professional_company_employment_history = sfc_professional_company_employment_history.to_pandas()
+    else:
+        _sfc_professional_company_employment_history = sfc_professional_company_employment_history
+    
+
     monthly_active_sfc_professional_snapshot = (
         generate_monthly_active_sfc_professional_snapshot(
-            sfc_professional_company_employment_history
+            _sfc_professional_company_employment_history
         )
     )
     return (monthly_active_sfc_professional_snapshot,)
