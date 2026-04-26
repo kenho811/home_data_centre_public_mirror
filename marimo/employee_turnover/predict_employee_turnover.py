@@ -16,10 +16,7 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(
-    width="medium",
-    layout_file="layouts/predict_employee_turnover.slides.json",
-)
+app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
@@ -330,22 +327,22 @@ def _(mo, sfc_professional_company_employment_history):
         SELECT 
             -- 1. Total Professionals
             COUNT(DISTINCT sfcid) AS total_professionals,
-    
+
             -- 2. Total Firms
             COUNT(DISTINCT companyId) AS total_firms,
-    
+
             -- 3. Employment Records
             COUNT(*) AS employment_records,
-    
+
             -- 4. Median license tenure (converted from days to years)
             ROUND(MEDIAN(tenure_days) / 365.25, 1) AS median_license_tenure_years,
-    
+
             -- 5. Monthly turnover rate
             ROUND(
                 (COUNT(endDate) * 100.0) / (SUM(tenure_days) / 30.44), 
                 1
             ) AS monthly_turnover_rate_pct,
-    
+
             -- 6. Median number of employees per firm
             (SELECT MEDIAN(emp_count) 
              FROM (
@@ -383,7 +380,7 @@ def _(mo, sfc_professional_company_employment_history):
         f"""
         **Analysis of Methodology Differences:**
         The differences between these results and the research table are primarily due to the **Corporate Group Consolidation** preprocessing and the extended observation window. By grouping entities by the first word of their name (e.g., merging "Get Nice Securities" and "Get Nice Futures"), internal transfers within the same financial group are no longer counted as new employment records or exits. This leads to a significant reduction in **Employment Records** and a corresponding increase in **Median License Tenure**, as professional stints are viewed as continuous across parent organizations rather than fragmented across subsidiaries. 
-    
+
         Furthermore, while the original research statistics covered the period from **2003–2024**, this updated analysis incorporates data up to **2026**, accounting for the higher count of **Total Professionals** ({int(stats['total_professionals']):,}) and capturing more recent market volatility in the turnover metrics.
         """
         )
@@ -481,9 +478,9 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
             mo.md(
                 """
             ## Month-over-month Active SFC professionals (2003–2026)
-        
+
             The bar chart of active SFC professionals reflects a resilient but evolving financial labor market between 2004 and 2026. The data aligns with the observation that the industry has seen consistent net expansion for the majority of the last two decades, characterized by the steady climb from approximately 20,000 professionals to a peak of nearly 40,000. This long-term growth supports the premise that new license creations have generally outpaced terminations over this extended period.
-        
+
             However, the chart also validates the impact of external stressors on market momentum. The stagnation observed around 2009 and the more recent plateau starting in 2020 directly mirror the periods where license issuance and termination reached parity. Following the 2020 peak, the slight decline in the total count of active professionals through 2026 suggests a more sustained period of industry contraction or consolidation, where the balance has shifted toward terminations. This recent trend emphasizes how global events can transition the market from a state of steady growth into a phase of significant labor market stress and stagnation.
             """
             ),
