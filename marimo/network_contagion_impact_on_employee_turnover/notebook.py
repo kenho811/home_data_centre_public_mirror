@@ -70,22 +70,9 @@ def _(mo):
     return (pl,)
 
 
-@app.cell
-def _(alt, mo):
-    # Assuming 'json_data' is your JSON string
-
-    with open(mo.notebook_location() / "public" / "correlation_of_historical_departure_on_employees_next_month_departure.json", "r") as f:
-        _chart_jsonspec = f.read()
-
-    _correlation_chart = alt.Chart.from_json(_chart_jsonspec)
-    _correlation_chart = mo.ui.altair_chart(_correlation_chart)
-
-
-
-    mo.vstack(
-        [
-            mo.md(
-                """
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
     ## The process
@@ -97,7 +84,25 @@ def _(alt, mo):
     2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
 
     3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
+    """)
+    return
 
+
+@app.cell
+def _(alt, mo):
+    # Assuming 'json_data' is your JSON string
+
+    with open(mo.notebook_location() / "public" / "correlation_of_historical_departure_on_employees_next_month_departure.json", "r") as f:
+        _chart_jsonspec = f.read()
+
+    _correlation_chart = alt.Chart.from_json(_chart_jsonspec)
+    _correlation_chart = mo.ui.altair_chart(_correlation_chart)
+
+
+    mo.vstack(
+        [
+            mo.md(
+                """
     ## The result
 
     At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
