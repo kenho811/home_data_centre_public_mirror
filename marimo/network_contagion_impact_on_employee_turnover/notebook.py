@@ -47,6 +47,8 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    import polars as pl
+
     _img = mo.image(
         src=mo.notebook_location() / "public" / "network_contagion_of_peers.png",
     )
@@ -65,7 +67,7 @@ def _(mo):
             _img,
         ]
     )
-    return
+    return (pl,)
 
 
 @app.cell
@@ -400,7 +402,7 @@ def _(mo, sfc_licenses):
 
 
 @app.cell(hide_code=True)
-def _(mo, sfc_professional_company_employment_history):
+def _(mo, pl, sfc_professional_company_employment_history):
     _df = mo.sql(
         f"""
         SELECT 
@@ -434,6 +436,13 @@ def _(mo, sfc_professional_company_employment_history):
         FROM sfc_professional_company_employment_history;
         """
     )
+
+
+    if isinstance(_df, pl.DataFrame):
+        _df = _df.to_pandas()
+    else:
+        _df = _df
+
 
     # Extract values for the display
     stats = _df.iloc[0]
@@ -487,9 +496,7 @@ def _(mo):
 
 
 @app.cell
-def _(deepcopy, pd, sfc_professional_company_employment_history):
-    import polars as pl
-
+def _(deepcopy, pd, pl, sfc_professional_company_employment_history):
     def generate_monthly_active_sfc_professional_snapshot(df):
         df = deepcopy(df)
         df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
@@ -526,7 +533,7 @@ def _(deepcopy, pd, sfc_professional_company_employment_history):
         _sfc_professional_company_employment_history = sfc_professional_company_employment_history.to_pandas()
     else:
         _sfc_professional_company_employment_history = sfc_professional_company_employment_history
-    
+
 
     monthly_active_sfc_professional_snapshot = (
         generate_monthly_active_sfc_professional_snapshot(
