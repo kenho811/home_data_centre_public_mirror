@@ -81,8 +81,8 @@ def _(mo):
     return
 
 
-app._unparsable_cell(
-    r"""
+@app.cell
+def _():
     import pandas as pd
     import marimo as mo
     import altair as alt
@@ -96,7 +96,7 @@ app._unparsable_cell(
         # 1. Convert to datetime objects first (keep as datetime64[ns] for easier manipulation)
         sfc_licenses["effectiveDate"] = pd.to_datetime(
             sfc_licenses["effectiveDate"]
-        ) How staff departure
+        )
         sfc_licenses["endDate"] = pd.to_datetime(sfc_licenses["endDate"])
 
         # 2. Create extra columns snapped to Jan 1st of the respective year
@@ -116,9 +116,7 @@ app._unparsable_cell(
     sfc_licenses = load_dataset()
 
     sfc_licenses
-    """,
-    name="_"
-)
+    return alt, mo, pd, sfc_licenses
 
 
 @app.cell
@@ -566,89 +564,82 @@ def _(mo):
 
 
 @app.cell
+def _(mo):
+    # Create the multiselect UI element
+    lookback_selection = mo.ui.multiselect(
+        options=[str(i) for i in range(1, 25)], 
+        label="Select Lookback Windows (Months):",
+        value=["3", "6", "12"] # Default selection
+    )
+
+    # Display the selection
+    lookback_selection
+    return
+
+
+@app.cell
 def _(monthly_active_sfc_professional_snapshot, pd):
     def add_left_next_momth(monthly_active_sfc_professional_snapshot):
         # add `left_next_month` to indicate if the professional will leave within the coming month
-        monthly_active_sfc_professional_snapshot["left_next_month"] = (
-            (
-                monthly_active_sfc_professional_snapshot["endDate"]
-                > monthly_active_sfc_professional_snapshot["snapshot_month"]
-            )
-            & (
-                monthly_active_sfc_professional_snapshot["endDate"]
-                <= (
-                    monthly_active_sfc_professional_snapshot["snapshot_month"]
-                    + pd.DateOffset(months=1)
-                )
-            )
+        monthly_active_sfc_professional_snapshot['left_next_month'] = (
+            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
+            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
         ).astype(int)
 
         return monthly_active_sfc_professional_snapshot
 
 
+
     def create_multi_lookback_features(df, lookback_months_list):
         """
-        Creates a long-form dataframe containing peer departure percentages
+        Creates a long-form dataframe containing peer departure percentages 
         for multiple lookback windows.
 
         """
-        df["snapshot_month"] = pd.to_datetime(df["snapshot_month"])
+        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
         all_results = []
 
         # 1. Identify the unique people at each company per month
-        historical_cohorts = df[
-            ["snapshot_month", "companyId", "professionalId"]
-        ].drop_duplicates()
+        historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
 
         for x in lookback_months_list:
             # Create a reference for the cohort from 'x' months ago
             cohort_shifted = historical_cohorts.copy()
-            cohort_shifted["comparison_month"] = cohort_shifted[
-                "snapshot_month"
-            ] + pd.DateOffset(months=x)
+            cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
 
             # 2. Match the past cohort to the current state (Today)
             presence_check = pd.merge(
                 cohort_shifted,
-                df[["snapshot_month", "companyId", "professionalId"]],
-                left_on=["comparison_month", "companyId", "professionalId"],
-                right_on=["snapshot_month", "companyId", "professionalId"],
-                how="left",
-                indicator=True,
+                df[['snapshot_month', 'companyId', 'professionalId']],
+                left_on=['comparison_month', 'companyId', 'professionalId'],
+                right_on=['snapshot_month', 'companyId', 'professionalId'],
+                how='left',
+                indicator=True
             )
 
             # If 'left_only', that specific person from the past is gone today
-            presence_check["is_departed"] = (
-                presence_check["_merge"] == "left_only"
-            ).astype(int)
+            presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
 
             # 3. Aggregate to Company-Level Percentage
-            departure_stats = (
-                presence_check.groupby(["comparison_month", "companyId"])
-                .agg(
-                    departed_count=("is_departed", "sum"),
-                    total_past_cohort_size=("is_departed", "count"),
-                )
-                .reset_index()
-            )
+            departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
+                departed_count=('is_departed', 'sum'),
+                total_past_cohort_size=('is_departed', 'count')
+            ).reset_index()
 
-            feature_name = "pct_departed_staff"
-            departure_stats[feature_name] = (
-                departure_stats["departed_count"]
-                / departure_stats["total_past_cohort_size"]
-            ) * 100
+            feature_name = 'pct_departed_staff'
+            departure_stats[feature_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
 
             # 4. Merge back to individual records for this specific 'x'
             temp_df = pd.merge(
                 df,
-                departure_stats[["comparison_month", "companyId", feature_name]],
-                left_on=["snapshot_month", "companyId"],
-                right_on=["comparison_month", "companyId"],
-                how="left",
-            ).drop(columns=["comparison_month"])
+                departure_stats[['comparison_month', 'companyId', feature_name]],
+                left_on=['snapshot_month', 'companyId'],
+                right_on=['comparison_month', 'companyId'],
+                how='left'
+            ).drop(columns=['comparison_month'])
 
             # Add metadata for facetting
-            temp_df["lookback_period"] = f"{x} Months"
+            temp_df['lookback_period'] = f"{x} Months"
 
             # Drop rows where we don't have enough history for this specific window
             temp_df = temp_df.dropna(subset=[feature_name])
@@ -659,15 +650,9 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         return pd.concat(all_results, ignore_index=True)
 
 
-    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(
-        monthly_active_sfc_professional_snapshot
-    )
-    monthly_active_sfc_professional_features_snapshot = (
-        create_multi_lookback_features(
-            monthly_active_sfc_professional_snapshot,
-            lookback_months_list=[3, 6, 12],
-        )
-    )
+
+    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
+    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=[3, 6, 12])
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
