@@ -732,10 +732,10 @@ def _(mo):
         [
             mo.md(
                 """
-    # Result: Correlation Peer Attribution and Individual Turnover in Following Month
+    # Result: Impact of Peer Departures on Individual Turnover Probability
 
 
-    #### Warning: Due memory limitation, choose at most 3 windows
+    #### Warning: Due to memory limitation, choose at most 3 windows
 
             """
             ),
