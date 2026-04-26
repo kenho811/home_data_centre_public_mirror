@@ -60,7 +60,7 @@ def _(mo):
                 """
     ## Introduction: Employee-employee Network
 
-    The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
+    The paper uses a graph-based approach to construct an employee-to-employee network. For any given professional, the departure of neighboring employees is shown to have a measurable impact on their own turnover probability. This framework views employee interactions within a firm as an interwoven network of relations. The strength of these relations (edges) is determined by the overlapping tenure two employees share at the same company, normalized by their total career length.
 
             """
             ),
@@ -73,6 +73,8 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    # Intution behind network contagion
+
     To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
     ## The process
