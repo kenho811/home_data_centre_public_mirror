@@ -57,7 +57,7 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-            """
+                """
             ## Introduction: Employee-employee Network
 
             The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
@@ -73,14 +73,16 @@ def _(mo):
 @app.cell
 def _(mo):
     _img = mo.image(
-        src=mo.notebook_location() / "public" / "the_Impact_of_historical_departures_on_imminent_turnover_risk.svg",
+        src=mo.notebook_location()
+        / "public"
+        / "the_Impact_of_historical_departures_on_imminent_turnover_risk.svg",
     )
 
 
     mo.vstack(
         [
             mo.md(
-            """
+                """
         To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
         ## The process
@@ -155,7 +157,6 @@ def _():
     from copy import deepcopy
 
 
-
     def load_dataset():
         sfc_licenses = pd.read_csv(
             mo.notebook_location() / "public" / "sfc_licences_2026.csv"
@@ -180,6 +181,7 @@ def _():
         sfc_licenses["endDate"] = sfc_licenses["endDate"].dt.date
 
         return sfc_licenses
+
 
     sfc_licenses = load_dataset()
 
@@ -512,11 +514,11 @@ def _(mo):
 def _(mo):
     # Define the range slider
     year_slider_for_snapshot = mo.ui.range_slider(
-        start=2003, 
-        stop=2026, 
-        step=1, 
-        value=[2015, 2020], 
-        label="Year Range For Monthly Snapshot"
+        start=2003,
+        stop=2026,
+        step=1,
+        value=[2015, 2020],
+        label="Year Range For Monthly Snapshot",
     )
 
     # Display the slider
@@ -526,7 +528,7 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-            """
+                """
     ## Set range for Monthly Snapshot
 
     - To prevent memory overflow, the default range is set to 2015 to 2020
@@ -550,7 +552,10 @@ def _(
 ):
     import datetime
 
-    def generate_monthly_active_sfc_professional_snapshot(df, from_year=2003, to_year=2026):
+
+    def generate_monthly_active_sfc_professional_snapshot(
+        df, from_year=2003, to_year=2026
+    ):
         df = deepcopy(df)
         df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
         # Fill empty end dates with a future date to represent current employees
@@ -583,17 +588,20 @@ def _(
 
 
     if isinstance(sfc_professional_company_employment_history, pl.DataFrame):
-        _sfc_professional_company_employment_history = sfc_professional_company_employment_history.to_pandas()
+        _sfc_professional_company_employment_history = (
+            sfc_professional_company_employment_history.to_pandas()
+        )
     else:
-        _sfc_professional_company_employment_history = sfc_professional_company_employment_history
+        _sfc_professional_company_employment_history = (
+            sfc_professional_company_employment_history
+        )
 
 
     monthly_active_sfc_professional_snapshot = (
         generate_monthly_active_sfc_professional_snapshot(
             _sfc_professional_company_employment_history,
             from_year=year_slider_for_snapshot.value[0],
-            to_year=year_slider_for_snapshot.value[1]
-        
+            to_year=year_slider_for_snapshot.value[1],
         )
     )
     return (monthly_active_sfc_professional_snapshot,)
@@ -647,6 +655,16 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot):
             """
             ),
             _chart,
+            mo.md(
+                """
+            This is how you would see if you set the range from 2003 to 2026
+            """,
+            ),
+            mo.image(
+                src=mo.notebook_location()
+                / "public"
+                / "monthly_active_sfc_professionals_from_2003_to_2026.svg"
+            ),
         ]
     )
     return
@@ -678,9 +696,9 @@ def _(mo):
 def _(mo):
     # Create the multiselect UI element
     lookback_selection = mo.ui.multiselect(
-        options=[str(i) for i in range(1, 25)], 
+        options=[str(i) for i in range(1, 25)],
         label="Select Lookback Windows (Months):",
-        value=["3"] # Default selection
+        value=["3"],  # Default selection
     )
 
 
@@ -689,7 +707,7 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-        """
+                """
     # Result: Correlation Peer Attribution and Individual Turnover in Following Month
 
 
@@ -712,65 +730,86 @@ def _(
 ):
     def add_left_next_momth(monthly_active_sfc_professional_snapshot):
         # add `left_next_month` to indicate if the professional will leave within the coming month
-        monthly_active_sfc_professional_snapshot['left_next_month'] = (
-            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
-            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
+        monthly_active_sfc_professional_snapshot["left_next_month"] = (
+            (
+                monthly_active_sfc_professional_snapshot["endDate"]
+                > monthly_active_sfc_professional_snapshot["snapshot_month"]
+            )
+            & (
+                monthly_active_sfc_professional_snapshot["endDate"]
+                <= (
+                    monthly_active_sfc_professional_snapshot["snapshot_month"]
+                    + pd.DateOffset(months=1)
+                )
+            )
         ).astype(int)
 
         return monthly_active_sfc_professional_snapshot
 
 
-
     def create_multi_lookback_features(df, lookback_months_list):
         """
-        Creates a long-form dataframe containing peer departure percentages 
+        Creates a long-form dataframe containing peer departure percentages
         for multiple lookback windows.
 
         """
-        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+        df["snapshot_month"] = pd.to_datetime(df["snapshot_month"])
         all_results = []
 
         # 1. Identify the unique people at each company per month
-        historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
+        historical_cohorts = df[
+            ["snapshot_month", "companyId", "professionalId"]
+        ].drop_duplicates()
 
         for x in lookback_months_list:
             # Create a reference for the cohort from 'x' months ago
             cohort_shifted = deepcopy(historical_cohorts)
-            cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
+            cohort_shifted["comparison_month"] = cohort_shifted[
+                "snapshot_month"
+            ] + pd.DateOffset(months=x)
 
             # 2. Match the past cohort to the current state (Today)
             presence_check = pd.merge(
                 cohort_shifted,
-                df[['snapshot_month', 'companyId', 'professionalId']],
-                left_on=['comparison_month', 'companyId', 'professionalId'],
-                right_on=['snapshot_month', 'companyId', 'professionalId'],
-                how='left',
-                indicator=True
+                df[["snapshot_month", "companyId", "professionalId"]],
+                left_on=["comparison_month", "companyId", "professionalId"],
+                right_on=["snapshot_month", "companyId", "professionalId"],
+                how="left",
+                indicator=True,
             )
 
             # If 'left_only', that specific person from the past is gone today
-            presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
+            presence_check["is_departed"] = (
+                presence_check["_merge"] == "left_only"
+            ).astype(int)
 
             # 3. Aggregate to Company-Level Percentage
-            departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
-                departed_count=('is_departed', 'sum'),
-                total_past_cohort_size=('is_departed', 'count')
-            ).reset_index()
+            departure_stats = (
+                presence_check.groupby(["comparison_month", "companyId"])
+                .agg(
+                    departed_count=("is_departed", "sum"),
+                    total_past_cohort_size=("is_departed", "count"),
+                )
+                .reset_index()
+            )
 
-            feature_name = 'pct_departed_staff'
-            departure_stats[feature_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
+            feature_name = "pct_departed_staff"
+            departure_stats[feature_name] = (
+                departure_stats["departed_count"]
+                / departure_stats["total_past_cohort_size"]
+            ) * 100
 
             # 4. Merge back to individual records for this specific 'x'
             temp_df = pd.merge(
                 df,
-                departure_stats[['comparison_month', 'companyId', feature_name]],
-                left_on=['snapshot_month', 'companyId'],
-                right_on=['comparison_month', 'companyId'],
-                how='left'
-            ).drop(columns=['comparison_month'])
+                departure_stats[["comparison_month", "companyId", feature_name]],
+                left_on=["snapshot_month", "companyId"],
+                right_on=["comparison_month", "companyId"],
+                how="left",
+            ).drop(columns=["comparison_month"])
 
             # Add metadata for facetting
-            temp_df['lookback_period'] = f"{x} Months"
+            temp_df["lookback_period"] = f"{x} Months"
 
             # Drop rows where we don't have enough history for this specific window
             temp_df = temp_df.dropna(subset=[feature_name])
@@ -780,10 +819,18 @@ def _(
         # Combine all lookbacks into one long-form dataframe
         return pd.concat(all_results, ignore_index=True)
 
+
     selected_months = [int(m) for m in lookback_selection.value]
 
-    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=selected_months)
+    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(
+        monthly_active_sfc_professional_snapshot
+    )
+    monthly_active_sfc_professional_features_snapshot = (
+        create_multi_lookback_features(
+            monthly_active_sfc_professional_snapshot,
+            lookback_months_list=selected_months,
+        )
+    )
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
@@ -893,7 +940,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     mo.vstack(
         [
             mo.md(
-            """
+                """
     The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
 
     * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
