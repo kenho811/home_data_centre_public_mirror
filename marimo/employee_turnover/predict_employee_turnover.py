@@ -89,7 +89,7 @@ def _(mo):
     
         This notebook guides you through the end-to-end analytical workflow:
 
-        1.  **Data Preprocessing**: Cleaning and structuring the raw SFC registry data into monthly active SFC professionals snapshots from 2003 to 2026.
+        1.  **Data Preprocessing**: Cleaning and structuring the raw SFC licenses registry data into monthly active SFC professionals snapshots from 2003 to 2026.
     
         2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
     
@@ -97,7 +97,7 @@ def _(mo):
 
         ## The result
 
-        At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month
+        At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
         
         
             """
@@ -628,7 +628,7 @@ def _(mo):
         [
             mo.md(
         """
-            ## Adjust Lookback Windows on Staff Departure in the Same Company
+    # Playground: Adjust Lookback Windows on Staff Departure in the Same Company
 
             """
             ),
