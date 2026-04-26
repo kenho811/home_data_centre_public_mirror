@@ -28,12 +28,27 @@ def _(mo):
     mo.md(r"""
     # Network Contagion in Financial Labor Markets
 
+    ### Original Paper on Arxiv: [https://arxiv.org/abs/2509.08001](https://arxiv.org/abs/2509.08001)
+
+    ### What drives employee turnover?
+    Have you ever wondered why employees leave their current company for another? Apart from personal career aspirations or compensation, "peer attrition" within the same organization has been shown to be a powerful driver of one's own departure. According to the research paper:
+
+    > *"Our analysis shows a contagion effect: professionals are 23% more likely to leave when over 30% of their peers depart within six months."*
+
+    The paper utilizes machine learning techniques to demonstrate the significant increase in explanatory power when this **network contagion effect** is factored into turnover prediction models.
+
     ### Predicting Employee Turnover via the Hong Kong SFC Public Register (2003–2026)
 
+    This notebook serves as a practical exploration of these concepts. While the original research dives deep into predictive modeling, this environment focuses on illustrating the underlying correlations using over two decades of public regulatory data.
 
-    ### What
+    ### The Data
+    We utilize the public dataset available on Kaggle: [Hong Kong SFC Register (2003–2026)](https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register). This rich dataset tracks the movement of SFC professionals (licencees) across registered institutions in Hong Kong, providing a unique lens into labor market dynamics.
 
-    ### How
+    ### The Process
+    This notebook guides you through the end-to-end analytical workflow:
+    1.  **Data Preprocessing**: Cleaning and structuring the raw SFC registry data into monthly active SFC professionals snapshots from 2003 to 2026.
+    2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
+    3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
     """)
     return
 
@@ -41,7 +56,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Researching Network Contagion: The SFC Public Register Dataset
+    ### Dataset: The SFC Public Register Dataset
 
     This dataset is an empirical foundation for analyzing employee turnover and professional network effects within one of the world's premier financial hubs. It originates from the public register maintained by the **Hong Kong Securities and Futures Commission (SFC)**, which has systematically recorded licensed individuals, corporations, and registered institutions since the implementation of the **Securities and Futures Ordinance (SFO)** on 1 April 2003.
 
@@ -66,8 +81,8 @@ def _(mo):
     return
 
 
-@app.cell
-def _():
+app._unparsable_cell(
+    r"""
     import pandas as pd
     import marimo as mo
     import altair as alt
@@ -81,7 +96,7 @@ def _():
         # 1. Convert to datetime objects first (keep as datetime64[ns] for easier manipulation)
         sfc_licenses["effectiveDate"] = pd.to_datetime(
             sfc_licenses["effectiveDate"]
-        )
+        ) How staff departure
         sfc_licenses["endDate"] = pd.to_datetime(sfc_licenses["endDate"])
 
         # 2. Create extra columns snapped to Jan 1st of the respective year
@@ -101,7 +116,9 @@ def _():
     sfc_licenses = load_dataset()
 
     sfc_licenses
-    return alt, mo, pd, sfc_licenses
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -368,33 +385,33 @@ def _(mo, sfc_professional_company_employment_history):
 
     # Extract values for the display
     stats = _df.iloc[0]
-    stats_table = mo.ui.table(
-        _df
-    )
+    stats_table = mo.ui.table(_df)
 
     # Reference image from research
     img = mo.image(
-        src=mo.notebook_location() / "public" / "sfc_data_statistics.jpg", 
-
+        src=mo.notebook_location() / "public" / "sfc_data_statistics.jpg",
     )
 
     # Final Layout
-    mo.vstack([
-        mo.md(
-        f"""
+    mo.vstack(
+        [
+            mo.md(
+                f"""
         ## Statistcs Comparison
-        """),
-        img,
-        stats_table,
-        mo.md(
-        f"""
+        """
+            ),
+            img,
+            stats_table,
+            mo.md(
+                f"""
         **Analysis of Methodology Differences:**
         The differences between these results and the research table are primarily due to the **Corporate Group Consolidation** preprocessing and the extended observation window. By grouping entities by the first word of their name (e.g., merging "Get Nice Securities" and "Get Nice Futures"), internal transfers within the same financial group are no longer counted as new employment records or exits. This leads to a significant reduction in **Employment Records** and a corresponding increase in **Median License Tenure**, as professional stints are viewed as continuous across parent organizations rather than fragmented across subsidiaries. 
 
-        Furthermore, while the original research statistics covered the period from **2003–2024**, this updated analysis incorporates data up to **2026**, accounting for the higher count of **Total Professionals** ({int(stats['total_professionals']):,}) and capturing more recent market volatility in the turnover metrics.
+        Furthermore, while the original research statistics covered the period from **2003–2024**, this updated analysis incorporates data up to **2026**, accounting for the higher count of **Total Professionals** ({int(stats["total_professionals"]):,}) and capturing more recent market volatility in the turnover metrics.
         """
-        )
-    ])
+            ),
+        ]
+    )
     return
 
 
@@ -429,30 +446,41 @@ def _(mo):
 def _(pd, sfc_professional_company_employment_history):
     def generate_monthly_active_sfc_professional_snapshot(df):
         df = df.copy()
-        df['effectiveDate'] = pd.to_datetime(df['effectiveDate'])
+        df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
         # Fill empty end dates with a future date to represent current employees
-        df['endDate'] = pd.to_datetime(df['endDate']).fillna(pd.Timestamp('9999-01-01'))
+        df["endDate"] = pd.to_datetime(df["endDate"]).fillna(
+            pd.Timestamp("9999-01-01")
+        )
 
         # 2. Create Monthly Snapshots (The "Attendance Sheet")
         # We create a record for every person for every month they were active
-        start_date = df['effectiveDate'].min().replace(day=1)
-        end_date = df['effectiveDate'].max().replace(day=1)
-        months = pd.date_range(start_date, end_date, freq='MS')
+        start_date = df["effectiveDate"].min().replace(day=1)
+        end_date = df["effectiveDate"].max().replace(day=1)
+        months = pd.date_range(start_date, end_date, freq="MS")
 
         snapshot_list = []
         for m in months:
             # Everyone active in month 'm'
-            active = df[(df['effectiveDate'] <= m) & (df['endDate'] > m)].copy()
-            active['snapshot_month'] = m
-            snapshot_list.append(active[['snapshot_month', 'companyId', 'professionalId', 'endDate']])
+            active = df[(df["effectiveDate"] <= m) & (df["endDate"] > m)].copy()
+            active["snapshot_month"] = m
+            snapshot_list.append(
+                active[
+                    ["snapshot_month", "companyId", "professionalId", "endDate"]
+                ]
+            )
 
-        monthly_active_sfc_professional_snapshot = pd.concat(snapshot_list, ignore_index=True)
-
+        monthly_active_sfc_professional_snapshot = pd.concat(
+            snapshot_list, ignore_index=True
+        )
 
         return monthly_active_sfc_professional_snapshot
 
 
-    monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
+    monthly_active_sfc_professional_snapshot = (
+        generate_monthly_active_sfc_professional_snapshot(
+            sfc_professional_company_employment_history
+        )
+    )
     return (monthly_active_sfc_professional_snapshot,)
 
 
@@ -473,24 +501,29 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
 
     # Assuming active_sfc_professional_by_month is your DataFrame
     # Ensure the snapshot_month is in datetime format for proper temporal scaling
-    active_sfc_professional_by_month['snapshot_month'] = pd.to_datetime(active_sfc_professional_by_month['snapshot_month'])
+    active_sfc_professional_by_month["snapshot_month"] = pd.to_datetime(
+        active_sfc_professional_by_month["snapshot_month"]
+    )
 
     # Create the bar _chart
-    _chart = alt.Chart(active_sfc_professional_by_month).mark_bar().encode(
-        x=alt.X('snapshot_month:T', title='Snapshot Month'),
-        y=alt.Y('active_sfc_professional:Q', title='Active SFC Professionals'),
-        tooltip=[
-            alt.Tooltip('snapshot_month:T', title='Month'),
-            alt.Tooltip('active_sfc_professional:Q', title='Count')
-        ]
-    ).properties(
-        title='Active SFC Professionals by Month',
-        width=800,
-        height=400
-    ).interactive()
+    _chart = (
+        alt.Chart(active_sfc_professional_by_month)
+        .mark_bar()
+        .encode(
+            x=alt.X("snapshot_month:T", title="Snapshot Month"),
+            y=alt.Y("active_sfc_professional:Q", title="Active SFC Professionals"),
+            tooltip=[
+                alt.Tooltip("snapshot_month:T", title="Month"),
+                alt.Tooltip("active_sfc_professional:Q", title="Count"),
+            ],
+        )
+        .properties(
+            title="Active SFC Professionals by Month", width=800, height=400
+        )
+        .interactive()
+    )
 
     # To display or save the _chart
-
 
 
     mo.vstack(
@@ -536,65 +569,86 @@ def _(mo):
 def _(monthly_active_sfc_professional_snapshot, pd):
     def add_left_next_momth(monthly_active_sfc_professional_snapshot):
         # add `left_next_month` to indicate if the professional will leave within the coming month
-        monthly_active_sfc_professional_snapshot['left_next_month'] = (
-            (monthly_active_sfc_professional_snapshot['endDate'] > monthly_active_sfc_professional_snapshot['snapshot_month']) & 
-            (monthly_active_sfc_professional_snapshot['endDate'] <= (monthly_active_sfc_professional_snapshot['snapshot_month'] + pd.DateOffset(months=1)))
+        monthly_active_sfc_professional_snapshot["left_next_month"] = (
+            (
+                monthly_active_sfc_professional_snapshot["endDate"]
+                > monthly_active_sfc_professional_snapshot["snapshot_month"]
+            )
+            & (
+                monthly_active_sfc_professional_snapshot["endDate"]
+                <= (
+                    monthly_active_sfc_professional_snapshot["snapshot_month"]
+                    + pd.DateOffset(months=1)
+                )
+            )
         ).astype(int)
 
         return monthly_active_sfc_professional_snapshot
 
 
-
     def create_multi_lookback_features(df, lookback_months_list):
         """
-        Creates a long-form dataframe containing peer departure percentages 
+        Creates a long-form dataframe containing peer departure percentages
         for multiple lookback windows.
 
         """
-        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
+        df["snapshot_month"] = pd.to_datetime(df["snapshot_month"])
         all_results = []
 
         # 1. Identify the unique people at each company per month
-        historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
+        historical_cohorts = df[
+            ["snapshot_month", "companyId", "professionalId"]
+        ].drop_duplicates()
 
         for x in lookback_months_list:
             # Create a reference for the cohort from 'x' months ago
             cohort_shifted = historical_cohorts.copy()
-            cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
+            cohort_shifted["comparison_month"] = cohort_shifted[
+                "snapshot_month"
+            ] + pd.DateOffset(months=x)
 
             # 2. Match the past cohort to the current state (Today)
             presence_check = pd.merge(
                 cohort_shifted,
-                df[['snapshot_month', 'companyId', 'professionalId']],
-                left_on=['comparison_month', 'companyId', 'professionalId'],
-                right_on=['snapshot_month', 'companyId', 'professionalId'],
-                how='left',
-                indicator=True
+                df[["snapshot_month", "companyId", "professionalId"]],
+                left_on=["comparison_month", "companyId", "professionalId"],
+                right_on=["snapshot_month", "companyId", "professionalId"],
+                how="left",
+                indicator=True,
             )
 
             # If 'left_only', that specific person from the past is gone today
-            presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
+            presence_check["is_departed"] = (
+                presence_check["_merge"] == "left_only"
+            ).astype(int)
 
             # 3. Aggregate to Company-Level Percentage
-            departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
-                departed_count=('is_departed', 'sum'),
-                total_past_cohort_size=('is_departed', 'count')
-            ).reset_index()
+            departure_stats = (
+                presence_check.groupby(["comparison_month", "companyId"])
+                .agg(
+                    departed_count=("is_departed", "sum"),
+                    total_past_cohort_size=("is_departed", "count"),
+                )
+                .reset_index()
+            )
 
-            feature_name = 'pct_departed_staff'
-            departure_stats[feature_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
+            feature_name = "pct_departed_staff"
+            departure_stats[feature_name] = (
+                departure_stats["departed_count"]
+                / departure_stats["total_past_cohort_size"]
+            ) * 100
 
             # 4. Merge back to individual records for this specific 'x'
             temp_df = pd.merge(
                 df,
-                departure_stats[['comparison_month', 'companyId', feature_name]],
-                left_on=['snapshot_month', 'companyId'],
-                right_on=['comparison_month', 'companyId'],
-                how='left'
-            ).drop(columns=['comparison_month'])
+                departure_stats[["comparison_month", "companyId", feature_name]],
+                left_on=["snapshot_month", "companyId"],
+                right_on=["comparison_month", "companyId"],
+                how="left",
+            ).drop(columns=["comparison_month"])
 
             # Add metadata for facetting
-            temp_df['lookback_period'] = f"{x} Months"
+            temp_df["lookback_period"] = f"{x} Months"
 
             # Drop rows where we don't have enough history for this specific window
             temp_df = temp_df.dropna(subset=[feature_name])
@@ -605,9 +659,15 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         return pd.concat(all_results, ignore_index=True)
 
 
-
-    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=[3, 6, 12])
+    monthly_active_sfc_professional_features_snapshot = add_left_next_momth(
+        monthly_active_sfc_professional_snapshot
+    )
+    monthly_active_sfc_professional_features_snapshot = (
+        create_multi_lookback_features(
+            monthly_active_sfc_professional_snapshot,
+            lookback_months_list=[3, 6, 12],
+        )
+    )
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
@@ -651,78 +711,88 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 @app.cell
 def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
-
     alt.data_transformers.enable("vegafusion")
 
     # Build the base chart
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
-        x=alt.X('pct_departed_staff:Q', 
-                title='Peer Departure % (Past X Months)',
-                scale=alt.Scale(domain=[0, 50])),
-        y=alt.Y('avg_left_next_month:Q', 
-                title='Prob. of Leaving Next Month (Mean)',
-                scale=alt.Scale(domain=[0, 0.05]))
+        x=alt.X(
+            "pct_departed_staff:Q",
+            title="Peer Departure % (Past X Months)",
+            scale=alt.Scale(domain=[0, 50]),
+        ),
+        y=alt.Y(
+            "avg_left_next_month:Q",
+            title="Prob. of Leaving Next Month (Mean)",
+            scale=alt.Scale(domain=[0, 0.05]),
+        ),
     )
 
     # Layer 1: Scatter points representing each Company-Month
-    _points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
+    _points = _base.mark_point(opacity=0.4, size=25, color="steelblue")
 
     # Layer 2: Linear Regression line
     _line = _base.transform_regression(
-        'pct_departed_staff', 'avg_left_next_month'
-    ).mark_line(color='red', size=3)
+        "pct_departed_staff", "avg_left_next_month"
+    ).mark_line(color="red", size=3)
 
     # Layer 3: Regression Coefficients Label
     # We use transform_regression with params=True to get the coefficients
-    _coef_label = _base.transform_regression(
-        'pct_departed_staff', 'avg_left_next_month', params=True
-    ).mark_text(
-        align='left', 
-        baseline='top', 
-        dx=-140, # Adjust position based on your scale
-        dy=-80, 
-        color='red',
-        fontWeight='bold'
-    ).encode(
-        # format: .4f provides 4 decimal places for the slope
-        text=alt.Text('coef:Q', format='.4f', title='Coefficient')
+    _coef_label = (
+        _base.transform_regression(
+            "pct_departed_staff", "avg_left_next_month", params=True
+        )
+        .mark_text(
+            align="left",
+            baseline="top",
+            dx=-140,  # Adjust position based on your scale
+            dy=-80,
+            color="red",
+            fontWeight="bold",
+        )
+        .encode(
+            # format: .4f provides 4 decimal places for the slope
+            text=alt.Text("coef:Q", format=".4f", title="Coefficient")
+        )
     )
 
     # Combine layers and facet by the lookback window
-    _chart = (_points + _line + _coef_label).facet(
-        facet=alt.Facet('lookback_period:N', 
-                        title=None, 
-                        sort=['3 Months', '6 Months', '12 Months']),
-        columns=3
-    ).properties(
-        title='Impact of Peer Departures on Individual Turnover Probability (with Coefficients)'
-    ).configure_axis(
-        grid=True
-    ).configure_view(
-        stroke=None
+    _chart = (
+        (_points + _line + _coef_label)
+        .facet(
+            facet=alt.Facet(
+                "lookback_period:N",
+                title=None,
+                sort=["3 Months", "6 Months", "12 Months"],
+            ),
+            columns=3,
+        )
+        .properties(
+            title="Impact of Peer Departures on Individual Turnover Probability (with Coefficients)"
+        )
+        .configure_axis(grid=True)
+        .configure_view(stroke=None)
     )
 
 
     mo.vstack(
         [
             mo.md(
-            """
-        
+                """
+
             ## Correlation Peer Attribution and Individual Turnover in Following Month
-        
+
             The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
-    
+
         * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
         * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
         * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
 
-    
+
             """
             ),
             _chart,
         ]
     )
-
     return
 
 
