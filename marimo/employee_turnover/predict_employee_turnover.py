@@ -11,7 +11,8 @@
 #     "pyarrow==24.0.0",
 #     "scikit-learn==1.8.0",
 #     "sqlglot==30.6.0",
-#     "vegafusion==2.0.3",
+#     "vegafusion>=2.0.3",
+#     "vl-convert-python==1.9.0.post1",
 # ]
 # requires-python = ">=3.12"
 # ///
@@ -614,6 +615,9 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
 @app.cell
 def _(alt, monthly_active_sfc_professional_features_snapshot):
+    import os
+
+
     alt.data_transformers.enable("vegafusion")
 
     # 1. Aggregate the data to Company-Month level 
