@@ -21,7 +21,10 @@
 import marimo
 
 __generated_with = "0.23.3"
-app = marimo.App(width="medium", layout_file="layouts/notebook.slides.json")
+app = marimo.App(
+    width="medium",
+    layout_file="layouts/network_contagion_impact_on_employee_turnover.slides.json",
+)
 
 
 @app.cell(hide_code=True)
@@ -245,8 +248,6 @@ def _(alt, mo, pd, sfc_licenses):
 
     plot_data = pd.concat([created, terminated])
 
-    # --- NEW: LOGIC TO FIND CROSSOVER POINTS ---
-    # ... (Keep your existing data processing up to pivot)
 
     # Pivot data to compare Created vs Terminated side-by-side
     wide_data = (
@@ -255,18 +256,6 @@ def _(alt, mo, pd, sfc_licenses):
         .reset_index()
     )
 
-    # --- NEW: CALCULATE BOUNDARIES FOR VERTICAL SLICES ---
-    # ... (Keep your existing data processing up to pivot)
-
-    # Pivot data to compare Created vs Terminated side-by-side
-    wide_data = (
-        plot_data.pivot(index="year", columns="status", values="count")
-        .fillna(0)
-        .reset_index()
-    )
-
-    # --- FIX: DATE-AWARE OFFSET ---
-    # Use pd.DateOffset to safely add 1 year to your datetime objects
     wide_data["next_year"] = wide_data["year"] + pd.DateOffset(years=1)
 
     # Define crossover logic
@@ -274,7 +263,7 @@ def _(alt, mo, pd, sfc_licenses):
     wide_data["prev_diff"] = wide_data["diff"].shift(1)
     crossovers = wide_data[wide_data["diff"] * wide_data["prev_diff"] < 0]
 
-    # --- 5. CREATE THE LAYERED _chart ---
+
 
     # _base X-axis
     _base = alt.Chart(plot_data).encode(
@@ -289,12 +278,12 @@ def _(alt, mo, pd, sfc_licenses):
         .encode(
             x="year:T",
             x2="next_year:T",
-            y=alt.value(0),  # Top of _chart
-            y2=alt.value(400),  # Bottom of _chart (adjust if height is different)
+            y=alt.value(0),  
+            y2=alt.value(400),
         )
     )
 
-    # Line _chart
+
     lines = _base.mark_line(point=True).encode(
         y=alt.Y("count:Q", title="Number of Licenses"),
         color=alt.Color(
@@ -311,7 +300,7 @@ def _(alt, mo, pd, sfc_licenses):
         ],
     )
 
-    # Crossover rules
+
     rules = (
         alt.Chart(crossovers)
         .mark_rule(color="gray", strokeDash=[4, 4], size=1.5)
