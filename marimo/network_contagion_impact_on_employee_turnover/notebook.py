@@ -97,6 +97,14 @@ def _(mo):
 
         At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month.
 
+        The visualization demonstrates a **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
+
+    * **Social Contagion Effect**: As the percentage of the "original" cohort (those present 3, 6, or 12 months ago) decreases, the risk profile of remaining employees shifts upward. This suggests that departures are not isolated events but rather create a "contagion" effect that destabilizes the remaining workforce.
+
+    * **The Stability Threshold**: Companies with peer departure rates below **10–15%** show relatively flat and low individual turnover risk. However, once attrition crosses this threshold, the probability of subsequent exits accelerates, indicating a potential "tipping point" in organizational culture.
+
+    * **Window Sensitivity**: The **6-month and 12-month windows** provide the most stable predictive signals. While 3-month windows capture acute shocks, the longer windows reflect a sustained erosion of the internal social fabric, which serves as a more reliable indicator for long-term retention modeling.
+
 
             """
             ),
@@ -131,6 +139,11 @@ def _(mo):
     * **`effectiveDate`**: Start date of the specific license or regulated activity.
     * **`endDate`**: Termination or expiration date of the license or affiliation.
     """)
+    return
+
+
+@app.cell
+def _():
     return
 
 
@@ -496,8 +509,48 @@ def _(mo):
 
 
 @app.cell
-def _(deepcopy, pd, pl, sfc_professional_company_employment_history):
-    def generate_monthly_active_sfc_professional_snapshot(df):
+def _(mo):
+    # Define the range slider
+    year_slider_for_snapshot = mo.ui.range_slider(
+        start=2003, 
+        stop=2026, 
+        step=1, 
+        value=[2015, 2020], 
+        label="Year Range For Monthly Snapshot"
+    )
+
+    # Display the slider
+    year_slider_for_snapshot
+
+
+    mo.vstack(
+        [
+            mo.md(
+            """
+    ## Set range for Monthly Snapshot
+
+    - To prevent memory overflow, the default range is set to 2015 to 2020
+
+
+            """
+            ),
+            year_slider_for_snapshot,
+        ]
+    )
+    return (year_slider_for_snapshot,)
+
+
+@app.cell
+def _(
+    deepcopy,
+    pd,
+    pl,
+    sfc_professional_company_employment_history,
+    year_slider_for_snapshot,
+):
+    import datetime
+
+    def generate_monthly_active_sfc_professional_snapshot(df, from_year=2003, to_year=2026):
         df = deepcopy(df)
         df["effectiveDate"] = pd.to_datetime(df["effectiveDate"])
         # Fill empty end dates with a future date to represent current employees
@@ -507,8 +560,8 @@ def _(deepcopy, pd, pl, sfc_professional_company_employment_history):
 
         # 2. Create Monthly Snapshots (The "Attendance Sheet")
         # We create a record for every person for every month they were active
-        start_date = df["effectiveDate"].min().replace(day=1)
-        end_date = df["effectiveDate"].max().replace(day=1)
+        start_date = datetime.date(year=from_year, month=1, day=1)
+        end_date = datetime.date(year=to_year, month=1, day=1)
         months = pd.date_range(start_date, end_date, freq="MS")
 
         snapshot_list = []
@@ -537,7 +590,10 @@ def _(deepcopy, pd, pl, sfc_professional_company_employment_history):
 
     monthly_active_sfc_professional_snapshot = (
         generate_monthly_active_sfc_professional_snapshot(
-            _sfc_professional_company_employment_history
+            _sfc_professional_company_employment_history,
+            from_year=year_slider_for_snapshot.value[0],
+            to_year=year_slider_for_snapshot.value[1]
+        
         )
     )
     return (monthly_active_sfc_professional_snapshot,)
@@ -624,8 +680,9 @@ def _(mo):
     lookback_selection = mo.ui.multiselect(
         options=[str(i) for i in range(1, 25)], 
         label="Select Lookback Windows (Months):",
-        value=["3", "6", "12"] # Default selection
+        value=["3"] # Default selection
     )
+
 
     # Display the selection
 
@@ -634,6 +691,9 @@ def _(mo):
             mo.md(
         """
     # Result: Correlation Peer Attribution and Individual Turnover in Following Month
+
+
+    #### Warning: Due memory limitation, choose at most 3 windows
 
             """
             ),
