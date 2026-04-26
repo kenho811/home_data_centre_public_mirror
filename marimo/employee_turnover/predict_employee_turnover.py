@@ -609,7 +609,7 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
 @app.cell(hide_code=True)
 def _(mo, monthly_active_sfc_professional_features_snapshot):
-    _df = mo.sql(
+    past_staff_departure_vs_next_month_departure_metrics = mo.sql(
         f"""
         SELECT 
             lookback_period,
@@ -638,10 +638,46 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
             To visualize the relationship between peer departures and turnover probability, the data is aggregated at the company-month level using the following logic:
             """
             ),
-            _df,
+            past_staff_departure_vs_next_month_departure_metrics,
         ]
     )
 
+    return (past_staff_departure_vs_next_month_departure_metrics,)
+
+
+@app.cell
+def _(alt, past_staff_departure_vs_next_month_departure_metrics):
+    # Build the visualization using the aggregated SQL output
+    base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
+        x=alt.X('pct_departed_staff:Q', 
+                title='Peer Departure % (Past X Months)',
+                scale=alt.Scale(domain=[0, 100])),
+        y=alt.Y('avg_left_next_month:Q', 
+                title='Prob. of Leaving Next Month (Mean)',
+                scale=alt.Scale(domain=[0, 1]))
+    )
+
+    # Layer 1: Scatter points representing each Company-Month
+    points = base.mark_point(opacity=0.4, size=25, color='steelblue')
+
+    # Layer 2: Linear Regression line to show the trend
+    line = base.transform_regression('pct_departed_staff', 'avg_left_next_month').mark_line(color='red', size=3)
+
+    # Combine layers and facet by the lookback window
+    chart = (points + line).facet(
+        facet=alt.Facet('lookback_period:N', 
+                        title=None, 
+                        sort=['3 Months', '6 Months', '12 Months']),
+        columns=3
+    ).properties(
+        title='Impact of Peer Departures on Individual Turnover Probability'
+    ).configure_axis(
+        grid=True
+    ).configure_view(
+        stroke=None
+    )
+
+    chart.display()
     return
 
 
