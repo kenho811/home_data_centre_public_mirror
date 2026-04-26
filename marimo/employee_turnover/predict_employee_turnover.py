@@ -633,7 +633,20 @@ def _(mo):
     )
 
     # Display the selection
-    lookback_selection
+
+    mo.vstack(
+        [
+            mo.md(
+        """
+            ## Adjust Lookback Windows on Staff Departure in the Same Company
+
+            """
+            ),
+            lookback_selection,
+        ]
+    )
+
+
     return (lookback_selection,)
 
 
