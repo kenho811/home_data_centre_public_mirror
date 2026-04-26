@@ -8,6 +8,7 @@
 #     "numpy==2.4.4",
 #     "pandas==3.0.2",
 #     "pyarrow==24.0.0",
+#     "scikit-learn==1.8.0",
 #     "sqlglot==30.6.0",
 # ]
 # requires-python = ">=3.12"
@@ -540,8 +541,7 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         return monthly_active_sfc_professional_snapshot
 
 
-    def add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=6):
-        col_name = f'pct_departed_staff_in_past_{num_past_months}_months'
+    def add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months, col_name):
  
         df = monthly_active_sfc_professional_snapshot
         df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
@@ -592,59 +592,39 @@ def _(monthly_active_sfc_professional_snapshot, pd):
 
         return final_df
 
+    num_past_months=6
+
     monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_features_snapshot = add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=6)
+    monthly_active_sfc_professional_features_snapshot = add_departure_in_past_x_months(monthly_active_sfc_professional_snapshot, num_past_months=num_past_months, col_name=f'pct_departed_staff_in_past_{num_past_months}_months')
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
 
 
 @app.cell
-def _(monthly_active_sfc_professional_features_snapshot, pd):
-    def perform_feature_propagation(df):
-        """
-        Performs feature propagation to capture peer influence (contagion).
-        Calculates the 'Peer Turnover Rate' for each professional at each snapshot.
-        """
-        # 1. Ensure time columns are in datetime format
-        df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
-    
-        # 2. Define the feature to propagate (e.g., the target signal 'left_next_month')
-        # In practice, this represents the probability or historical exit rate of peers.
-        feature_to_propagate = 'left_next_month'
-    
-        # 3. Group by snapshot and company to find peers
-        # We calculate the firm-level turnover rate excluding the individual themselves
-        # to avoid data leakage (self-influence).
-    
-        # Calculate sum of 'left_next_month' and count of employees per firm/month
-        firm_stats = df.groupby(['snapshot_month', 'companyId'])[feature_to_propagate].agg(['sum', 'count']).reset_index()
+def _(monthly_active_sfc_professional_features_snapshot):
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import roc_auc_score, precision_recall_curve
 
-        return firm_stats
-        firm_stats.columns = ['snapshot_month', 'companyId', 'firm_total_exits', 'firm_size']
-    
-        # Merge stats back to the original dataframe
-        df = df.merge(firm_stats, on=['snapshot_month', 'companyId'], how='left')
-    
-        # 4. Apply the propagation logic:
-        # Peer_Feature_i = (Sum_of_Peer_Features - Feature_i) / (Firm_Size - 1)
-        # This represents the average 'feature' value of all OTHER people in the same firm.
-    
-        df['peer_turnover_rate'] = (df['firm_total_exits'] - df[feature_to_propagate]) / (df['firm_size'] - 1)
-    
-        # Fill NaNs for firms with only 1 employee (no peers to propagate from)
-        df['peer_turnover_rate'] = df['peer_turnover_rate'].fillna(0)
-    
-        # 5. Optional: Propagate other features like 'average tenure' or 'stability'
-        # Following the paper's 'Organizational Stability' metrics
-        # (Assuming a 'tenure' column exists or can be derived from snapshot - startDate)
-    
-        return df
+    # 1. Prepare your Features (X) and Target (y)
+    # X needs to be a 2D array for sklearn
+    X = monthly_active_sfc_professional_features_snapshot[['pct_departed_staff_in_past_6_months']] 
+    y = monthly_active_sfc_professional_features_snapshot['left_next_month']
 
+    # 2. Handle Class Imbalance
+    # The paper mentions turnover is only ~2.3%. 
+    # We should use 'class_weight' so the model doesn't just predict "0" for everyone.
+    model = LogisticRegression(class_weight='balanced')
 
-    processed_df = perform_feature_propagation(monthly_active_sfc_professional_features_snapshot)
-    processed_df
-    # processed_df[['snapshot_month', 'companyId', 'professionalId', 'peer_turnover_rate']].head()
+    # 3. Train the model
+    model.fit(X, y)
+
+    # 4. Predict Probabilities
+    # predict_proba returns [prob_of_0, prob_of_1]. We want index 1.
+    monthly_active_sfc_professional_features_snapshot['predicted_chance'] = model.predict_proba(X)[:, 1]
+
+    print(f"Model Coefficient: {model.coef_[0][0]}")
     return
 
 
