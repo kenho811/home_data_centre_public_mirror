@@ -641,7 +641,6 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
             past_staff_departure_vs_next_month_departure_metrics,
         ]
     )
-
     return (past_staff_departure_vs_next_month_departure_metrics,)
 
 
@@ -680,52 +679,6 @@ def _(alt, past_staff_departure_vs_next_month_departure_metrics):
     )
 
     chart.display()
-    return
-
-
-@app.cell(disabled=True)
-def _(alt, monthly_active_sfc_professional_features_snapshot):
-
-    alt.data_transformers.enable("vegafusion")
-
-    # 1. Aggregate the data to Company-Month level 
-    # We calculate the mean of 'left_next_month' to get the turnover probability
-    agg_data = monthly_active_sfc_professional_features_snapshot.groupby(
-        ['lookback_period', 'snapshot_month', 'companyId']
-    ).agg({
-        'pct_departed_staff': 'first',
-        'left_next_month': 'mean'
-    }).reset_index()
-
-    # 2. Define the _base _chart encoding
-    _base = alt.Chart(agg_data).encode(
-        x=alt.X('pct_departed_staff:Q', 
-                title='Peer Departure % (Past X Months)',
-                scale=alt.Scale(domain=[0, 100])),
-        y=alt.Y('left_next_month:Q', 
-                title='Prob. of Leaving Next Month',
-                scale=alt.Scale(domain=[0, 1]))
-    )
-
-    # 3. Create Scatter _points
-    points = _base.mark_point(opacity=0.4, size=25, color='steelblue')
-
-    # 4. Create Regression Lines (to visualize the trend/correlation)
-    line = _base.transform_regression('pct_departed_staff', 'left_next_month').mark_line(color='red', size=3)
-
-    # 5. Combine, Facet, and Configure
-    _chart = (points + line).facet(
-        facet=alt.Facet('lookback_period:N', title=None, sort=['3 Months', '6 Months', '12 Months']),
-        columns=3
-    ).properties(
-        title='Impact of Peer Departures on Individual Turnover Probability'
-    ).configure_axis(
-        grid=True
-    ).configure_view(
-        stroke=None
-    )
-
-    _chart
     return
 
 
