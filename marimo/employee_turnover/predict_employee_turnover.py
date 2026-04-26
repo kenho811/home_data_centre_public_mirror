@@ -43,13 +43,72 @@ def _(mo):
 
     ### The Data
     We utilize the public dataset available on Kaggle: [Hong Kong SFC Register (2003–2026)](https://www.kaggle.com/datasets/gautiermarti/hk-sfc-register). This rich dataset tracks the movement of SFC professionals (licencees) across registered institutions in Hong Kong, providing a unique lens into labor market dynamics.
-
-    ### The Process
-    This notebook guides you through the end-to-end analytical workflow:
-    1.  **Data Preprocessing**: Cleaning and structuring the raw SFC registry data into monthly active SFC professionals snapshots from 2003 to 2026.
-    2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
-    3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    _img = mo.image(
+        src=mo.notebook_location() / "public" / "network_contagion_of_peers.png",
+    )
+
+
+    mo.vstack(
+        [
+            mo.md(
+            """
+            ## Introduction: Employee-employee Network
+
+            The paper uses a graph approach to create an employee-to-employee network. For any given employee, the departure of neighbouring employees is shown to have an impact.
+
+            This notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
+
+          
+            """
+            ),
+            _img,
+        ]
+    )
+
+
+    return
+
+
+@app.cell
+def _(mo):
+    _img = mo.image(
+        src=mo.notebook_location() / "public" / "the_Impact_of_historical_departures_on_imminent_turnover_risk.svg",
+    )
+
+
+    mo.vstack(
+        [
+            mo.md(
+            """
+
+        ## The process
+    
+        This notebook guides you through the end-to-end analytical workflow:
+
+        1.  **Data Preprocessing**: Cleaning and structuring the raw SFC registry data into monthly active SFC professionals snapshots from 2003 to 2026.
+    
+        2.  **Feature Engineering**: Constructing complex "lookback" metrics to calculate the percentage of peer departures over rolling 3, 6, and 12-month windows.
+    
+        3.  **Data Visualization**: Creating faceted analysis and regression plots to visualize the "tipping points" where peer departures begin to accelerate individual turnover.
+
+        ## The result
+
+        At the end of the notebook, you will see how staff departure in the past X months correlates with the probability of a staff departuring in the next month
+        
+        
+            """
+            ),
+            _img,
+        ]
+    )
+
+
     return
 
 
@@ -574,11 +633,11 @@ def _(mo):
 
     # Display the selection
     lookback_selection
-    return
+    return (lookback_selection,)
 
 
 @app.cell
-def _(monthly_active_sfc_professional_snapshot, pd):
+def _(lookback_selection, monthly_active_sfc_professional_snapshot, pd):
     def add_left_next_momth(monthly_active_sfc_professional_snapshot):
         # add `left_next_month` to indicate if the professional will leave within the coming month
         monthly_active_sfc_professional_snapshot['left_next_month'] = (
@@ -649,10 +708,10 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         # Combine all lookbacks into one long-form dataframe
         return pd.concat(all_results, ignore_index=True)
 
-
+    selected_months = [int(m) for m in lookback_selection.value]
 
     monthly_active_sfc_professional_features_snapshot = add_left_next_momth(monthly_active_sfc_professional_snapshot)
-    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=[3, 6, 12])
+    monthly_active_sfc_professional_features_snapshot = create_multi_lookback_features(monthly_active_sfc_professional_snapshot, lookback_months_list=selected_months)
 
     monthly_active_sfc_professional_features_snapshot
     return (monthly_active_sfc_professional_features_snapshot,)
@@ -762,8 +821,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
     mo.vstack(
         [
             mo.md(
-                """
-
+        """
             ## Correlation Peer Attribution and Individual Turnover in Following Month
 
             The visualization demonstrates a statistically significant **positive correlation** between historical peer attrition and the probability of individual turnover in the following month.
