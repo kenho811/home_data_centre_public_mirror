@@ -942,8 +942,6 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         .resolve_axis(x='independent') 
     )
 
-    _chart.save('correlation_of_historical_departure_on_employees_next_month_departure.json')
-
     mo.vstack(
         [
             mo.md(
