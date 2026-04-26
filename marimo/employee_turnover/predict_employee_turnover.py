@@ -444,10 +444,9 @@ def _(pd, sfc_professional_company_employment_history):
 
 
         return monthly_active_sfc_professional_snapshot
-    
+
 
     monthly_active_sfc_professional_snapshot = generate_monthly_active_sfc_professional_snapshot(sfc_professional_company_employment_history)
-
     return (monthly_active_sfc_professional_snapshot,)
 
 
@@ -508,26 +507,21 @@ def _(alt, mo, monthly_active_sfc_professional_snapshot, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Step 3: Feature Engineering
-    ---------------------------
+    ## Step 3: Feature Engineering
 
-    To predict the probability of turnover, we need to define exactly what we are trying to forecast and which signals might tip us off. This section adds the following features to the dataset:
+    To predict the probability of turnover, we must define a target variable for the model to learn and independent variables that provide predictive signals. This section adds the following features to the dataset:
 
     ### 1. **`left_next_month`** (Dependent Variable)
+    * **Definition**: A binary flag (0 or 1) indicating whether an employee departs the company in the month immediately following the current snapshot.
+    * **Description**: This serves as our "ground truth" or target variable. It is derived by checking if a professional's `endDate` falls within the 30-day window following the `snapshot_month`.
+    * **Role**: The model will calculate a probability score between 0 and 1 aiming to estimate this outcome.
 
-    -   **Definition**: A binary flag (0 or 1) indicating whether an employee departs the company in the month immediately following the current snapshot.
-
-    -   **Description**: This is our "ground truth" or target variable. It is calculated by comparing the professional's `endDate` against the current `snapshot_month`. If the end date falls within the next 30-day window, the value is 1; otherwise, it is 0.
-
-    ### 2. **`pct_departed_staff_in_past_{num_past_months}_months`** (Independent Variable / Predictor)
-
-    -   **Definition**: The percentage of the specific cohort of staff present $X$ months ago who are no longer with the company in the current month.
-
-    -   **Description**: This feature serves as a leading indicator of "social contagion" or organizational instability. Unlike simple headcount changes, this metric performs a row-level lookup on unique IDs to track the actual attrition of a specific peer group.
-
-        -   **High values** suggest a "sinking ship" scenario where established peers are leaving, which may increase the likelihood of the remaining staff departing.
-
-    -   **Low values** suggest a stable environment with high peer retention.
+    ### 2. **`pct_departed_staff`** (Independent Variable / Predictor)
+    * **Definition**: The percentage of a specific cohort of staff—defined as those present at the company exactly $X$ months ago—who are no longer present in the current snapshot month.
+    * **Description**: This feature acts as a leading indicator of "social contagion" or organizational instability. Unlike a simple headcount change (which can be masked by new hires), this metric uses a row-level lookup on `professionalId` to track the actual survival rate of a specific peer group.
+        * **High values**: Suggest a "sinking ship" scenario where established peers are leaving, potentially increasing the psychological or operational pressure on the remaining staff to depart.
+        * **Low values**: Suggest a stable environment with high peer retention, which typically correlates with higher employee loyalty.
+    * **Multi-Window Analysis**: By iterating through various lookback periods (e.g., 3, 6, and 12 months), we can evaluate which time horizon provides the strongest signal for predicting imminent turnover.
     """)
     return
 
@@ -549,19 +543,19 @@ def _(monthly_active_sfc_professional_snapshot, pd):
         """
         Creates a long-form dataframe containing peer departure percentages 
         for multiple lookback windows.
-    
+
         """
         df['snapshot_month'] = pd.to_datetime(df['snapshot_month'])
         all_results = []
-    
+
         # 1. Identify the unique people at each company per month
         historical_cohorts = df[['snapshot_month', 'companyId', 'professionalId']].drop_duplicates()
-    
+
         for x in lookback_months_list:
             # Create a reference for the cohort from 'x' months ago
             cohort_shifted = historical_cohorts.copy()
             cohort_shifted['comparison_month'] = cohort_shifted['snapshot_month'] + pd.DateOffset(months=x)
-        
+
             # 2. Match the past cohort to the current state (Today)
             presence_check = pd.merge(
                 cohort_shifted,
@@ -571,19 +565,19 @@ def _(monthly_active_sfc_professional_snapshot, pd):
                 how='left',
                 indicator=True
             )
-        
+
             # If 'left_only', that specific person from the past is gone today
             presence_check['is_departed'] = (presence_check['_merge'] == 'left_only').astype(int)
-        
+
             # 3. Aggregate to Company-Level Percentage
             departure_stats = presence_check.groupby(['comparison_month', 'companyId']).agg(
                 departed_count=('is_departed', 'sum'),
                 total_past_cohort_size=('is_departed', 'count')
             ).reset_index()
-        
+
             feature_name = 'pct_departed_staff'
             departure_stats[feature_name] = (departure_stats['departed_count'] / departure_stats['total_past_cohort_size']) * 100
-        
+
             # 4. Merge back to individual records for this specific 'x'
             temp_df = pd.merge(
                 df,
@@ -592,15 +586,15 @@ def _(monthly_active_sfc_professional_snapshot, pd):
                 right_on=['comparison_month', 'companyId'],
                 how='left'
             ).drop(columns=['comparison_month'])
-        
+
             # Add metadata for facetting
             temp_df['lookback_period'] = f"{x} Months"
-        
+
             # Drop rows where we don't have enough history for this specific window
             temp_df = temp_df.dropna(subset=[feature_name])
-        
+
             all_results.append(temp_df)
-    
+
         # Combine all lookbacks into one long-form dataframe
         return pd.concat(all_results, ignore_index=True)
 
@@ -613,10 +607,46 @@ def _(monthly_active_sfc_professional_snapshot, pd):
     return (monthly_active_sfc_professional_features_snapshot,)
 
 
-@app.cell
-def _(alt, monthly_active_sfc_professional_features_snapshot):
-    import os
+@app.cell(hide_code=True)
+def _(mo, monthly_active_sfc_professional_features_snapshot):
+    _df = mo.sql(
+        f"""
+        SELECT 
+            lookback_period,
+            snapshot_month,
+            companyId,
+            -- Since pct_departed_staff is already a company-level calculation, 
+            -- AVG will return the value itself for that group.
+            AVG(pct_departed_staff) AS pct_departed_staff,
+            -- This calculates the turnover probability (e.g., 0.05 for 5%)
+            AVG(left_next_month) AS avg_left_next_month
+        FROM 
+            monthly_active_sfc_professional_features_snapshot
+        GROUP BY 
+            lookback_period,
+            snapshot_month,
+            companyId
+        """
+    )
 
+
+    mo.vstack(
+        [
+            mo.md(
+                """
+            ### Data Aggregation for Visualization
+            To visualize the relationship between peer departures and turnover probability, the data is aggregated at the company-month level using the following logic:
+            """
+            ),
+            _df,
+        ]
+    )
+
+    return
+
+
+@app.cell(disabled=True)
+def _(alt, monthly_active_sfc_professional_features_snapshot):
 
     alt.data_transformers.enable("vegafusion")
 
