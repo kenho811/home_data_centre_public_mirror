@@ -90,15 +90,15 @@ def _(mo):
 
 @app.cell
 def _(alt, mo):
-    # Assuming 'json_data' is your JSON string
-
     with open(mo.notebook_location() / "public" / "correlation_of_historical_departure_on_employees_next_month_departure.json", "r") as f:
         _chart_jsonspec = f.read()
-
     _correlation_chart = alt.Chart.from_json(_chart_jsonspec)
-    _correlation_chart = mo.ui.altair_chart(_correlation_chart)
+    correlation_chart = mo.ui.altair_chart(_correlation_chart)
+    return (correlation_chart,)
 
 
+@app.cell
+def _(correlation_chart, mo):
     mo.vstack(
         [
             mo.md(
@@ -118,7 +118,7 @@ def _(alt, mo):
 
             """
             ),
-            _correlation_chart,
+            correlation_chart,
         ]
     )
     return
@@ -887,10 +887,12 @@ def _(mo, monthly_active_sfc_professional_features_snapshot):
 
 
 @app.cell
-def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
-
-    alt.data_transformers.enable("vegafusion")
-
+def _(
+    alt,
+    correlation_chart,
+    mo,
+    past_staff_departure_vs_next_month_departure_metrics,
+):
     # Build the base chart
     _base = alt.Chart(past_staff_departure_vs_next_month_departure_metrics).encode(
         x=alt.X(
@@ -941,6 +943,7 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
         .configure_view(stroke=None)
         .resolve_axis(x='independent') 
     )
+    alt.data_transformers.enable("default")
 
     _chart.save('correlation_of_historical_departure_on_employees_next_month_departure.json')
 
@@ -956,6 +959,14 @@ def _(alt, mo, past_staff_departure_vs_next_month_departure_metrics):
                 """
             ),
             _chart,
+
+            mo.md(
+                """
+    ## How it would look like with 3 Months, 6 Months and 12 Months enabled for 2003 to 2016
+
+            """
+            ),
+            correlation_chart,
         ]
     )
     return
