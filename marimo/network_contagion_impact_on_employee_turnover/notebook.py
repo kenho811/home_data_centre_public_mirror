@@ -943,9 +943,6 @@ def _(
         .configure_view(stroke=None)
         .resolve_axis(x='independent') 
     )
-    alt.data_transformers.enable("default")
-
-    _chart.save('correlation_of_historical_departure_on_employees_next_month_departure.json')
 
     mo.vstack(
         [
