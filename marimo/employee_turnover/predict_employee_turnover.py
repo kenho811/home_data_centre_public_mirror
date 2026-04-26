@@ -86,7 +86,7 @@ def _(mo):
         [
             mo.md(
             """
-        To provide a more intuitive understanding of the impact, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
+        To provide a more intuitive understanding of the research finding, this notebook focuses on correlating depature of employees working in the **same company** and the probability of an employee in the same company leaving the next month.
 
         ## The process
     
@@ -331,7 +331,7 @@ def _(mo):
 
     ## Step 1: Data Consolidation & Employment Mapping
 
-    To analyze **Network Contagion** effectively, our dataset focuses strictly on the **duration of employment** at a given firm rather than the specific regulated activities (license types) held by the individual.
+    To analyze **Network Contagion** effectively, we will have to transform the raw data to focus strictly on the **duration of employment** at a given firm rather than the specific regulated activities (license types) held by the individual.
 
     This differs from the methodology in the research paper, as evident from the statistics summary below.
 
