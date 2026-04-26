@@ -96,6 +96,7 @@ def main(
 if __name__ == "__main__":
     notebook_directories = [
         'stock_trend',
-        'ccass_correlation'
+        'ccass_correlation',
+        'network_contagion_impact_on_employee_turnover'
     ]
     main(notebook_directories)
