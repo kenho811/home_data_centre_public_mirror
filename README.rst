@@ -36,7 +36,7 @@ Architecture
 Software Architecture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: pics/Data_Platform_Architecture-Overview_Software_Architecture.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-Overview_Software_Architecture.jpg
    :alt: Software Architecture
 
 
@@ -53,7 +53,7 @@ The data consumers include Apache Superset and a bespoke data client GUI I creat
 Platform Architecture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: pics/Data_Platform_Architecture-Overview_Platform_Infrastructure.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-Overview_Platform_Infrastructure.jpg
    :alt: Platform Architecture
 
 
@@ -75,7 +75,7 @@ ETL
 Data Ingestion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Ingestion.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-ETL_Data_Ingestion.jpg
    :alt: Data Ingestion
 
 
@@ -87,7 +87,7 @@ Data Transformation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Transformation.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-ETL_Data_Transformation.jpg
    :alt: Data Transformation
 
 
@@ -104,7 +104,7 @@ Data Distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-ETL_Data_Distribution_Dashboards.jpg
 
    :alt: Data Dashboards
 
@@ -115,7 +115,7 @@ For viewing trends and high-level summaries, Apache Superset is an indispensable
 
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Email.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-ETL_Data_Distribution_Email.jpg
 
    :alt: Emails with reports
 
@@ -124,7 +124,7 @@ Apache Superset also features a user-friendly scheduler that can send out report
 
 
 
-.. figure:: pics/Data_Platform_Architecture-ETL_Data_Distribution_Apps.jpg
+.. figure:: pics/june_2025/Data_Platform_Architecture-ETL_Data_Distribution_Apps.jpg
    :alt: Bespoke data applications
 
 
